@@ -5,7 +5,7 @@ Local-first work dashboard for [Claude Code](https://claude.com/claude-code) use
 - **Dashboard** (`#/`): open items grouped by stage — KPI tiles, pipeline strip, cards.
 - **Archive** (`#/archive`): every item, searchable and filterable. Typing `142` finds PROJ-142; `proj-142`, `PROJ-142`, or `142` all work; free text searches titles, bodies, and tags. Enter jumps straight to a single ID match. `/` focuses the search box.
 - **Item detail** (`#/item/PROJ-142`): rendered notes, links, related items, artifacts, and related **Claude sessions**.
-- **Mentions** (`/mentions`): Teams messages that directly @mention you, with per-message mark-complete.
+- **Mentions** (`#/mentions`): Teams messages that directly @mention you, with per-message mark-complete.
 
 Data gets in through two Claude Code skills (both in `skill\`, installed as junctions by `scripts\install-skill.cmd`):
 
@@ -37,7 +37,7 @@ API: `GET /api/sessions/<KEY>` · `POST /api/sessions/<id>/recap`.
 
 ## Teams mentions
 
-`/mentions` (standalone page, not part of the SPA) is an inbox of Teams chat messages that directly @mention you. Data lives in `mentions\mentions.json` and gets there via the **`/mentions` skill**, which searches Teams through the Microsoft 365 MCP connector, keeps only messages whose `mentions[]` include your AAD id, classifies each as action/question/FYI, and merges without ever touching completed state. "Mark complete" / "Reopen" on the page hit `POST /api/mentions/<id>/complete|reopen`. Coverage caveat: the Graph search path used with date filters only scans 1:1/group/meeting chats — Teams **channel** messages never appear.
+`#/mentions` (a SPA route like the rest; the old `/mentions` path 302-redirects) is an inbox of Teams chat messages that directly @mention you. Data lives in `mentions\mentions.json` and gets there via the **`/mentions` skill**, which searches Teams through the Microsoft 365 MCP connector, keeps only messages whose `mentions[]` include your AAD id, classifies each as action/question/FYI, and merges without ever touching completed state. "Mark complete" / "Reopen" on the page hit `POST /api/mentions/<id>/complete|reopen`. Coverage caveat: the Graph search path used with date filters only scans 1:1/group/meeting chats — Teams **channel** messages never appear.
 
 API: `GET /api/mentions` · `POST /api/mentions/<id>/complete` · `POST /api/mentions/<id>/reopen`.
 
@@ -46,8 +46,8 @@ API: `GET /api/mentions` · `POST /api/mentions/<id>/complete` · `POST /api/men
 ```
 server.js            zero-dependency node:http server
 config.json          your deployment values (gitignored; see config.example.json)
-public\              SPA + mentions page: index.html, mentions.html, app.js, styles.css,
-                     vendor\ (minisearch 7.2.0, marked 18.0.7, dompurify 3.4.12)
+public\              SPA: index.html, app.js, styles.css,
+                     vendor\ (minisearch 7.2.0, marked 18.0.7, dompurify 3.4.12, fonts\)
 items\<KEY>.md       one file per work item
 artifacts\<KEY>\     files belonging to an item (auto-scanned, no manifest)
 artifacts\_reports\  cross-item snapshots

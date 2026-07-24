@@ -488,7 +488,8 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (pathname === '/mentions') {
-      return serveFile(res, path.join(PUBLIC_DIR, 'mentions.html'), 'no-cache');
+      // Old standalone-page URL — mentions is a SPA route now.
+      return send(res, 302, { Location: '/#/mentions' }, 'See /#/mentions');
     }
 
     if (pathname.startsWith('/artifacts/')) {

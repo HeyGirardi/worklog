@@ -1,13 +1,13 @@
 ---
 name: mentions
-description: Sync Teams messages that directly @mention the user into the worklog mentions inbox (http://localhost:43210/mentions). Use when the user says /mentions, "check my mentions", "refresh mentions", "who mentioned me", or asks to mark a mention complete from chat. Args: optional "since <date>" to widen the search window.
+description: Sync Teams messages that directly @mention the user into the worklog mentions inbox (http://localhost:43210/#/mentions). Use when the user says /mentions, "check my mentions", "refresh mentions", "who mentioned me", or asks to mark a mention complete from chat. Args: optional "since <date>" to widen the search window.
 ---
 
 # Sync Teams mentions
 
 Paths — `WORKLOG` = the worklog repo root. Resolve it from the skill junction: `powershell -c "(Get-Item $env:USERPROFILE\.claude\skills\mentions).Target"` and strip the trailing `\skill\mentions`.
 - Data: `<WORKLOG>\mentions\mentions.json`
-- UI: `http://localhost:43210/mentions` (port configurable in `<WORKLOG>\config.json`)
+- UI: `http://localhost:43210/#/mentions` (port configurable in `<WORKLOG>\config.json`)
 - API: `GET /api/mentions` · `POST /api/mentions/<id>/complete` · `POST /api/mentions/<id>/reopen`
 
 Required MCP tools (claude.ai Microsoft 365 connector; load via ToolSearch if deferred):
@@ -66,7 +66,7 @@ Message shape (all fields required, `completed` is `null` or an ISO timestamp):
 
 1. `curl -s http://127.0.0.1:43210/api/mentions` — parses, and new ids appear. Server down → files are still valid; skip silently.
 2. `git -C <WORKLOG> add mentions && git -C <WORKLOG> commit -m "mentions: sync <YYYY-MM-DD> — <N> new"` (skip commit when nothing changed, or when the repo has no git history).
-3. Tell the user: `<N> new, <open> open → http://localhost:43210/mentions`, plus the standing caveat that channel messages are not covered (only 1:1/group/meeting chats).
+3. Tell the user: `<N> new, <open> open → http://localhost:43210/#/mentions`, plus the standing caveat that channel messages are not covered (only 1:1/group/meeting chats).
 
 ## Completing from chat
 

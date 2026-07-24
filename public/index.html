@@ -20,7 +20,7 @@
   <nav class="topnav">
     <a class="navlink" data-nav="dash" href="#/">Worklog</a>
     <a class="navlink" data-nav="archive" href="#/archive">Archive</a>
-    <a class="navlink" href="/mentions">Mentions<span id="mentionsCount" class="navbadge" hidden></span></a>
+    <a class="navlink" data-nav="mentions" href="#/mentions">Mentions<span id="mentionsCount" class="navbadge" hidden></span></a>
     <span class="spacer"></span>
     <input id="search" type="search" placeholder="Search — 142, PROJ-142, free text…" autocomplete="off" spellcheck="false">
     <button id="themeToggle" class="chip" type="button" title="Cycle theme">Theme: auto</button>
@@ -33,6 +33,7 @@
 </div>
 <script src="/vendor/minisearch.umd.js"></script>
 <script src="/vendor/marked.umd.js"></script>
+<script src="/vendor/dompurify.min.js"></script>
 <script src="/app.js"></script>
 </body>
 </html>

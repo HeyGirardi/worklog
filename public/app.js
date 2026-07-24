@@ -172,6 +172,7 @@ function parseHash() {
   const h = location.hash.slice(1) || '/';
   const [pathPart, queryPart] = h.split('?');
   if (pathPart === '/archive') return { view: 'archive', params: new URLSearchParams(queryPart || '') };
+  if (pathPart === '/mentions') return { view: 'mentions' };
   const m = pathPart.match(/^\/item\/(.+)$/);
   if (m) return { view: 'item', key: decodeURIComponent(m[1]) };
   return { view: 'dash' };
@@ -201,10 +202,13 @@ function render() {
     const q = route.params.get('q') || '';
     if ($('#search').value !== q) $('#search').value = q;
     renderArchive(route.params);
+  } else if (route.view === 'mentions') {
+    document.querySelector('[data-nav="mentions"]').setAttribute('aria-current', 'page');
+    renderMentions();
   } else {
     renderDetail(route.key);
   }
-  renderFooter();
+  renderFooter(route.view);
 }
 
 function renderBanner() {
@@ -214,7 +218,16 @@ function renderBanner() {
     : '';
 }
 
-function renderFooter() {
+function renderFooter(view) {
+  if (view === 'mentions') {
+    const d = mentionsState.data;
+    const open = d ? (d.messages || []).filter(m => !m.completed).length : null;
+    $('#foot').innerHTML =
+      `${open == null ? '' : `${open} open mention${open === 1 ? '' : 's'} · `}` +
+      `data read live from <code>mentions\\mentions.json</code> · ` +
+      `refresh via <code>/mentions</code> in Claude Code`;
+    return;
+  }
   const open = state.items.filter(OPEN).length;
   $('#foot').innerHTML =
     `${state.items.length} items (${open} open) · data read live from <code>items\\</code> · ` +
@@ -482,6 +495,176 @@ function wireSessionEvents(el) {
       }
     }
   });
+}
+
+/* ---------------------------------------------------------------- mentions */
+
+const mentionsState = { data: null, kind: null };
+const KIND_LABEL = { action: 'Action', question: 'Question', fyi: 'FYI' };
+
+const mDayKey = iso => new Date(iso).toDateString();
+
+function mDayLabel(iso) {
+  const d = new Date(iso);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const that = new Date(d); that.setHours(0, 0, 0, 0);
+  const diff = Math.round((today - that) / 86400000);
+  const base = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
+    + (d.getFullYear() !== new Date().getFullYear() ? ' ' + d.getFullYear() : '');
+  return diff === 0 ? base + ' — today' : diff === 1 ? base + ' — yesterday' : base;
+}
+
+const mTime = iso => new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+
+function mAge(iso) {
+  const days = Math.floor((Date.now() - new Date(iso)) / 86400000);
+  return days <= 0 ? '' : days === 1 ? '1 day open' : days + ' days open';
+}
+
+async function renderMentions() {
+  if (!mentionsState.data) $('#view').innerHTML = '<p class="empty">Loading mentions…</p>';
+  try {
+    const data = await (await fetch('/api/mentions', { cache: 'no-store' })).json();
+    if (parseHash().view !== 'mentions') return;   // navigated away mid-fetch
+    mentionsState.data = data;
+  } catch (err) {
+    if (parseHash().view === 'mentions') {
+      $('#view').innerHTML = `<p class="empty">Failed to load mentions: ${esc(err.message)}</p>`;
+    }
+    return;
+  }
+  paintMentions();
+}
+
+function mentionCard(m) {
+  const el = document.createElement('article');
+  el.className = 'mention' + (m.completed ? ' done' : '');
+
+  const kind = KIND_LABEL[m.kind] ? m.kind : 'fyi';
+  const meta = document.createElement('div');
+  meta.className = 'm-meta';
+  meta.innerHTML =
+    '<span class="m-from"></span><span class="m-chat"></span>' +
+    `<span class="kind kind-${kind}">${KIND_LABEL[kind]}</span><span class="m-time"></span>`;
+  meta.querySelector('.m-from').textContent = m.from || 'Unknown';
+  meta.querySelector('.m-chat').textContent = m.chatName || '';
+  meta.querySelector('.m-time').textContent =
+    mTime(m.created) + (m.edited ? ' · edited' : '') +
+    (!m.completed && mAge(m.created) ? ' · ' + mAge(m.created) : '');
+  el.appendChild(meta);
+
+  const body = document.createElement('div');
+  body.className = 'm-body';
+  // Message HTML is authored by other people (via Teams/Graph) — sanitize it.
+  body.innerHTML = DOMPurify.sanitize(m.bodyHtml || '', { FORBID_TAGS: ['style'] });
+  body.querySelectorAll('a').forEach(a => { a.target = '_blank'; a.rel = 'noopener'; });
+  el.appendChild(body);
+
+  const foot = document.createElement('div');
+  foot.className = 'm-foot';
+  if (m.teamsUrl && /^https:\/\/teams\.microsoft\.com\//.test(m.teamsUrl)) {
+    const a = document.createElement('a');
+    a.href = m.teamsUrl; a.target = '_blank'; a.rel = 'noopener';
+    a.textContent = 'Open in Teams';
+    foot.appendChild(a);
+  }
+  const btn = document.createElement('button');
+  btn.className = 'btn' + (m.completed ? ' reopen' : '');
+  btn.textContent = m.completed ? 'Reopen' : 'Mark complete';
+  btn.addEventListener('click', () => flipMention(m, btn));
+  foot.appendChild(btn);
+  el.appendChild(foot);
+  return el;
+}
+
+async function flipMention(m, btn) {
+  btn.disabled = true;
+  const action = m.completed ? 'reopen' : 'complete';
+  try {
+    const res = await fetch(`/api/mentions/${encodeURIComponent(m.id)}/${action}`, { method: 'POST' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    m.completed = (await res.json()).completed;
+    paintMentions();
+    refreshMentionsBadge();
+  } catch {
+    btn.disabled = false;
+    btn.textContent = 'Failed — retry';
+  }
+}
+
+function paintMentions() {
+  if (parseHash().view !== 'mentions') return;
+  const d = mentionsState.data;
+  const msgs = (d.messages || []).slice()
+    .sort((a, b) => String(b.created).localeCompare(String(a.created)));
+  const open = msgs.filter(m => !m.completed);
+  const done = msgs.filter(m => m.completed);
+  const oldest = open.length ? open[open.length - 1] : null;
+
+  const asof = (d.lastSync
+    ? 'Last synced ' + new Date(d.lastSync).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+      + (d.user && d.user.displayName ? ' · mentions of ' + esc(d.user.displayName) : '')
+    : 'Never synced — run <code>/mentions</code> in Claude Code to pull Teams data.')
+    + (oldest && mAge(oldest.created) ? ' · oldest open: ' + mAge(oldest.created) : '');
+
+  const tile = (v, l) => `<div class="tile"><div class="value">${v}</div><div class="label">${l}</div></div>`;
+  const kindBtn = k =>
+    `<button class="chip" data-kind="${k}" aria-pressed="${mentionsState.kind === k}">${KIND_LABEL[k]}</button>`;
+
+  $('#view').innerHTML = `
+    <header class="pagehead">
+      <h1>Teams mentions</h1>
+      <p class="asof">${asof}</p>
+    </header>
+    <div class="tiles">
+      ${tile(open.length, `open mention${open.length === 1 ? '' : 's'}`)}
+      ${tile(open.filter(m => m.kind === 'action').length, 'need action')}
+      ${tile(open.filter(m => m.kind === 'question').length, 'questions')}
+      ${tile(done.length, 'completed')}
+    </div>
+    ${msgs.length ? `<div class="filters"><span class="flabel">Kind</span>${['action', 'question', 'fyi'].map(kindBtn).join('')}</div>` : ''}
+    <div id="mlist"></div>
+    <p class="cover">Covers 1:1, group, and meeting chats only — Teams channel messages are not searched.
+    Data refreshes when <code>/mentions</code> runs in Claude Code; completing items here is instant.</p>
+  `;
+
+  for (const btn of document.querySelectorAll('.filters button[data-kind]')) {
+    btn.addEventListener('click', () => {
+      mentionsState.kind = mentionsState.kind === btn.dataset.kind ? null : btn.dataset.kind;
+      paintMentions();
+    });
+  }
+
+  const list = $('#mlist');
+  const shown = mentionsState.kind ? open.filter(m => m.kind === mentionsState.kind) : open;
+  if (!shown.length) {
+    const p = document.createElement('p');
+    p.className = 'empty';
+    p.innerHTML = open.length
+      ? 'No open mentions of this kind.'
+      : 'No open mentions — inbox clear.<br>New ones appear after <code>/mentions</code> runs in Claude Code.';
+    list.appendChild(p);
+  } else {
+    let lastDay = null;
+    for (const m of shown) {
+      if (mDayKey(m.created) !== lastDay) {
+        lastDay = mDayKey(m.created);
+        const h = document.createElement('h2');
+        h.className = 'day-head';
+        h.textContent = mDayLabel(m.created);
+        list.appendChild(h);
+      }
+      list.appendChild(mentionCard(m));
+    }
+  }
+  if (done.length) {
+    const det = document.createElement('details');
+    det.className = 'completed';
+    det.innerHTML = `<summary>Completed (${done.length})</summary>`;
+    for (const m of done) det.appendChild(mentionCard(m));
+    list.appendChild(det);
+  }
+  renderFooter('mentions');
 }
 
 /* ---------------------------------------------------------------- theme */

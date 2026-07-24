@@ -3,7 +3,7 @@
 A personal, local work dashboard for Claude Code users:
 
 - **`/archive`** — archive Jira work items with notes, artifacts, and related Claude sessions; browsable dashboard + searchable history at http://localhost:43210
-- **`/mentions`** — inbox of Teams chat messages that directly @mention you, with per-message mark-complete, at http://localhost:43210/mentions
+- **`/mentions`** — inbox of Teams chat messages that directly @mention you, with per-message mark-complete, at http://localhost:43210/#/mentions
 
 Everything runs on your machine, bound to 127.0.0.1 only. Your items and mentions are yours; nothing is shared.
 
