@@ -113,7 +113,7 @@ The dashboard extracts `## Now`, `## Next`, and the first three `## Detail` bull
 | Reinstall the task | `powershell -ExecutionPolicy Bypass -File scripts\install-task.ps1` |
 | Reinstall the skill junctions | `scripts\install-skill.cmd` (installs every `skill\*`) |
 | Change port | set `port` in `config.json`, restart the task |
-| Package for a teammate without GitHub access | `powershell -ExecutionPolicy Bypass -File scripts\package-team.ps1` — zips the tooling without personal data |
+| Package for a teammate without GitHub access | `powershell -ExecutionPolicy Bypass -File scripts\package-team.ps1` — zips the tooling without personal data; add `-Internal` to bundle the real `config.json` + a START-HERE guide (team sharing only, never public) |
 | Request log | `server.log` in this folder |
 
 The task runs at logon with `S4U` (no console window), `ExecutionTimeLimit` disabled (default would kill it after 72 h), and restarts up to 3 times a minute apart on failure.
