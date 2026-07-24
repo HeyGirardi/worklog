@@ -242,6 +242,7 @@ details.card summary {
   min-width: 0;
 }
 details.card summary::-webkit-details-marker { display: none; }
+details.card summary .chips { padding-right: 24px; }  /* reserve the chevron's corner */
 details.card summary::after {
   content: '\25B8';
   position: absolute; right: 0; top: 0;
