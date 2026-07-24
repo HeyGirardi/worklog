@@ -132,7 +132,6 @@ a, button, summary, [role="button"] { touch-action: manipulation; }
   border-bottom: 1px solid var(--grid);
   margin-bottom: 22px;
 }
-.topnav .brand { font-weight: 600; font-size: 17px; color: var(--text-primary); text-decoration: none; }
 .topnav .navlink {
   color: var(--text-secondary); text-decoration: none;
   font-size: 14px; font-weight: 600;
