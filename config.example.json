@@ -1,0 +1,7 @@
+{
+  "//": "Copy to config.json and edit. All fields optional — remove any you don't need.",
+  "port": 43210,
+  "projectKeys": ["PROJ", "OPS", "LOCAL"],
+  "jiraBaseUrl": "https://your-org.atlassian.net",
+  "githubOwner": "your-github-org"
+}

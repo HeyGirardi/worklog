@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teams mentions</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%232a78d6'/%3E%3Ctext x='8' y='12' font-size='10' font-family='system-ui' font-weight='700' fill='white' text-anchor='middle'%3E@%3C/text%3E%3C/svg%3E">
+<script>
+  // Same theme persistence as the worklog SPA (shared localStorage key).
+  try {
+    var t = localStorage.getItem('worklogTheme');
+    if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+  } catch (e) {}
+</script>
+<link rel="stylesheet" href="/styles.css">
+<style>
+  .day-head {
+    font-size: 12.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--grid);
+    padding-bottom: 5px; margin: 26px 0 12px;
+  }
+  .mention {
+    background: var(--surface-1);
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+    padding: 12px 16px 10px;
+    margin-bottom: 12px;
+  }
+  .mention.done { opacity: .62; }
+  .m-meta { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+  .m-from { font-weight: 650; }
+  .m-chat { color: var(--text-muted); font-size: 12.5px; }
+  .m-time { color: var(--text-muted); font-size: 12.5px; margin-left: auto; white-space: nowrap; }
+  .kind {
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+    padding: 1px 8px; border-radius: 9px; border: 1px solid;
+  }
+  .kind-action   { color: var(--status-warning); border-color: var(--status-warning); }
+  .kind-question { color: var(--stage-3); border-color: var(--stage-3); }
+  .kind-fyi      { color: var(--text-muted); border-color: var(--text-muted); }
+  .m-body { font-size: 13.5px; line-height: 1.5; overflow-wrap: anywhere; }
+  .m-body p { margin: 5px 0; }
+  .m-body a { color: var(--stage-3); }
+  .m-foot { display: flex; align-items: center; gap: 14px; margin-top: 8px; }
+  .m-foot a { color: var(--stage-3); font-size: 12.5px; text-decoration: none; }
+  .m-foot a:hover { text-decoration: underline; }
+  .btn {
+    margin-left: auto;
+    background: none; border: 1px solid var(--hairline); border-radius: 7px;
+    color: var(--text-secondary); font: inherit; font-size: 12.5px; font-weight: 600;
+    padding: 4px 12px; cursor: pointer;
+  }
+  .btn:hover { border-color: var(--status-good); color: var(--success-text); }
+  .btn.reopen:hover { border-color: var(--status-warning); color: var(--status-warning); }
+  .empty { color: var(--text-secondary); padding: 28px 0; text-align: center; }
+  .empty code { font-size: 12px; }
+  details.completed { margin-top: 34px; }
+  details.completed summary {
+    cursor: pointer; color: var(--text-secondary); font-size: 13px; font-weight: 600;
+    padding: 6px 0; user-select: none;
+  }
+  .cover { color: var(--text-muted); font-size: 12px; margin-top: 30px; }
+  .filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .filters .flabel { color: var(--text-muted); font-size: 12px; margin-right: 2px; }
+  .filters button.chip {
+    background: var(--surface-1); border: 1px solid var(--hairline); border-radius: 9px;
+    color: var(--text-secondary); font: inherit; font-size: 12px; font-weight: 600;
+    padding: 3px 11px; cursor: pointer;
+  }
+  .filters button.chip[aria-pressed="true"] {
+    border-color: var(--stage-3); color: var(--text-primary);
+    outline: 1px solid var(--stage-3); outline-offset: -1px;
+  }
+</style>
+</head>
+<body class="viz-root">
+<div class="wrap">
+
+  <nav class="topnav">
+    <a class="brand" href="/">Worklog</a>
+    <a class="navlink" href="/">Dashboard</a>
+    <a class="navlink" href="/#/archive">Archive</a>
+    <a class="navlink" href="/mentions" aria-current="page">Mentions</a>
+    <span class="spacer"></span>
+    <button id="themeToggle" class="chip" type="button" title="Cycle theme">Theme: auto</button>
+  </nav>
+
+  <header class="pagehead">
+    <h1>Teams mentions</h1>
+    <p class="asof" id="asof">Loading…</p>
+  </header>
+
+  <div class="tiles" id="tiles"></div>
+  <div class="filters" id="filters" hidden>
+    <span class="flabel">Kind</span>
+    <button class="chip" data-kind="action" aria-pressed="false">Action</button>
+    <button class="chip" data-kind="question" aria-pressed="false">Question</button>
+    <button class="chip" data-kind="fyi" aria-pressed="false">FYI</button>
+  </div>
+  <main id="list"></main>
+
+  <p class="cover">Covers 1:1, group, and meeting chats only — Teams channel messages are not searched.
+  Data refreshes when the <code>/mentions</code> skill runs in Claude Code; completing items here is instant.</p>
+
+</div>
+<script src="/vendor/dompurify.min.js"></script>
+<script>
+'use strict';
+
+const $ = s => document.querySelector(s);
+let DATA = null;
+let KIND_FILTER = null;   // null = all, else 'action' | 'question' | 'fyi'
+
+// ---- theme toggle (same key/cycle as the worklog SPA)
+const THEMES = ['auto', 'light', 'dark'];
+function applyTheme(t) {
+  if (t === 'auto') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = t;
+  $('#themeToggle').textContent = 'Theme: ' + t;
+}
+$('#themeToggle').addEventListener('click', () => {
+  const cur = localStorage.getItem('worklogTheme') || 'auto';
+  const next = THEMES[(THEMES.indexOf(cur) + 1) % THEMES.length];
+  if (next === 'auto') localStorage.removeItem('worklogTheme');
+  else localStorage.setItem('worklogTheme', next);
+  applyTheme(next);
+});
+applyTheme(localStorage.getItem('worklogTheme') || 'auto');
+
+// ---- kind filter chips
+for (const btn of document.querySelectorAll('#filters button.chip')) {
+  btn.addEventListener('click', () => {
+    KIND_FILTER = KIND_FILTER === btn.dataset.kind ? null : btn.dataset.kind;
+    for (const b of document.querySelectorAll('#filters button.chip')) {
+      b.setAttribute('aria-pressed', String(b.dataset.kind === KIND_FILTER));
+    }
+    render();
+  });
+}
+
+// ---- rendering
+const KIND_LABEL = { action: 'Action', question: 'Question', fyi: 'FYI' };
+
+function dayKey(iso) { return new Date(iso).toDateString(); }
+
+function dayLabel(iso) {
+  const d = new Date(iso);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const that = new Date(d); that.setHours(0, 0, 0, 0);
+  const diff = Math.round((today - that) / 86400000);
+  const base = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
+    + (d.getFullYear() !== new Date().getFullYear() ? ' ' + d.getFullYear() : '');
+  return diff === 0 ? base + ' — today' : diff === 1 ? base + ' — yesterday' : base;
+}
+
+function timeLabel(iso) {
+  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+function ageLabel(iso) {
+  const days = Math.floor((Date.now() - new Date(iso)) / 86400000);
+  return days <= 0 ? '' : days === 1 ? '1 day open' : days + ' days open';
+}
+
+function card(m) {
+  const el = document.createElement('article');
+  el.className = 'mention' + (m.completed ? ' done' : '');
+  el.dataset.id = m.id;
+
+  const kind = KIND_LABEL[m.kind] ? m.kind : 'fyi';
+  const meta = document.createElement('div');
+  meta.className = 'm-meta';
+  meta.innerHTML =
+    '<span class="m-from"></span>' +
+    '<span class="m-chat"></span>' +
+    '<span class="kind kind-' + kind + '">' + KIND_LABEL[kind] + '</span>' +
+    '<span class="m-time"></span>';
+  meta.querySelector('.m-from').textContent = m.from || 'Unknown';
+  meta.querySelector('.m-chat').textContent = m.chatName || '';
+  meta.querySelector('.m-time').textContent =
+    timeLabel(m.created) + (m.edited ? ' · edited' : '') +
+    (!m.completed && ageLabel(m.created) ? ' · ' + ageLabel(m.created) : '');
+  el.appendChild(meta);
+
+  const body = document.createElement('div');
+  body.className = 'm-body';
+  // Message HTML is authored by other people (via Teams/Graph) — sanitize it.
+  body.innerHTML = DOMPurify.sanitize(m.bodyHtml || '', { FORBID_TAGS: ['style'] });
+  body.querySelectorAll('a').forEach(a => { a.target = '_blank'; a.rel = 'noopener'; });
+  el.appendChild(body);
+
+  const foot = document.createElement('div');
+  foot.className = 'm-foot';
+  if (m.teamsUrl && /^https:\/\/teams\.microsoft\.com\//.test(m.teamsUrl)) {
+    const a = document.createElement('a');
+    a.href = m.teamsUrl; a.target = '_blank'; a.rel = 'noopener';
+    a.textContent = 'Open in Teams';
+    foot.appendChild(a);
+  }
+  const btn = document.createElement('button');
+  btn.className = 'btn' + (m.completed ? ' reopen' : '');
+  btn.textContent = m.completed ? 'Reopen' : 'Mark complete';
+  btn.addEventListener('click', () => flip(m, btn));
+  foot.appendChild(btn);
+  el.appendChild(foot);
+  return el;
+}
+
+async function flip(m, btn) {
+  btn.disabled = true;
+  const action = m.completed ? 'reopen' : 'complete';
+  try {
+    const res = await fetch('/api/mentions/' + m.id + '/' + action, { method: 'POST' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const updated = await res.json();
+    m.completed = updated.completed;
+    render();
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'Failed — retry';
+  }
+}
+
+function tile(value, label) {
+  const t = document.createElement('div');
+  t.className = 'tile';
+  t.innerHTML = '<div class="value"></div><div class="label"></div>';
+  t.querySelector('.value').textContent = value;
+  t.querySelector('.label').textContent = label;
+  return t;
+}
+
+function render() {
+  const msgs = (DATA.messages || []).slice()
+    .sort((a, b) => String(b.created).localeCompare(String(a.created)));
+  const open = msgs.filter(m => !m.completed);
+  const done = msgs.filter(m => m.completed);
+
+  const tiles = $('#tiles');
+  tiles.innerHTML = '';
+  tiles.appendChild(tile(open.length, 'open mention' + (open.length === 1 ? '' : 's')));
+  tiles.appendChild(tile(open.filter(m => m.kind === 'action').length, 'need action'));
+  tiles.appendChild(tile(open.filter(m => m.kind === 'question').length, 'questions'));
+  tiles.appendChild(tile(done.length, 'completed'));
+
+  const oldest = open.length ? open[open.length - 1] : null;
+  $('#asof').textContent = (DATA.lastSync
+    ? 'Last synced ' + new Date(DATA.lastSync).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+      + (DATA.user && DATA.user.displayName ? ' · mentions of ' + DATA.user.displayName : '')
+    : 'Never synced — run /mentions in Claude Code to pull Teams data.')
+    + (oldest && ageLabel(oldest.created) ? ' · oldest open: ' + ageLabel(oldest.created) : '');
+
+  $('#filters').hidden = !msgs.length;
+  const shown = KIND_FILTER ? open.filter(m => m.kind === KIND_FILTER) : open;
+
+  const list = $('#list');
+  list.innerHTML = '';
+  if (!shown.length) {
+    const d = document.createElement('div');
+    d.className = 'empty';
+    d.innerHTML = open.length
+      ? 'No open mentions of this kind.'
+      : 'No open mentions. 🎉<br>New ones appear after <code>/mentions</code> runs in Claude Code.';
+    list.appendChild(d);
+  } else {
+    let lastDay = null;
+    for (const m of shown) {
+      if (dayKey(m.created) !== lastDay) {
+        lastDay = dayKey(m.created);
+        const h = document.createElement('h2');
+        h.className = 'day-head';
+        h.textContent = dayLabel(m.created);
+        list.appendChild(h);
+      }
+      list.appendChild(card(m));
+    }
+  }
+
+  if (done.length) {
+    const det = document.createElement('details');
+    det.className = 'completed';
+    det.innerHTML = '<summary>Completed (' + done.length + ')</summary>';
+    for (const m of done) det.appendChild(card(m));
+    list.appendChild(det);
+  }
+}
+
+async function load() {
+  try {
+    DATA = await (await fetch('/api/mentions', { cache: 'no-store' })).json();
+    render();
+  } catch (e) {
+    $('#asof').textContent = 'Failed to load /api/mentions: ' + e.message;
+  }
+}
+
+window.addEventListener('focus', load);
+load();
+</script>
+</body>
+</html>

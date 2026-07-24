@@ -1,0 +1,6 @@
+server.log
+node_modules/
+Thumbs.db
+.cache/
+worklog-team-*.zip
+config.json

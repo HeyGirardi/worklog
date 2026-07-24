@@ -1,0 +1,9 @@
+{
+  "name": "worklog",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Personal work-item archive: searchable history + open-items dashboard on localhost",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Worklog</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%232a78d6'/%3E%3Ctext x='8' y='12' font-size='10' font-family='system-ui' font-weight='700' fill='white' text-anchor='middle'%3EW%3C/text%3E%3C/svg%3E">
+<script>
+  // Apply saved theme before first paint to avoid a flash of the wrong scheme.
+  try {
+    var t = localStorage.getItem('worklogTheme');
+    if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+  } catch (e) {}
+</script>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body class="viz-root">
+<div class="wrap">
+
+  <nav class="topnav">
+    <a class="brand" href="#/">Worklog</a>
+    <a class="navlink" data-nav="dash" href="#/">Dashboard</a>
+    <a class="navlink" data-nav="archive" href="#/archive">Archive</a>
+    <a class="navlink" href="/mentions">Mentions<span id="mentionsCount" class="navbadge" hidden></span></a>
+    <span class="spacer"></span>
+    <input id="search" type="search" placeholder="Search — 142, PROJ-142, free text…" autocomplete="off" spellcheck="false">
+    <button id="themeToggle" class="chip" type="button" title="Cycle theme">Theme: auto</button>
+  </nav>
+
+  <div id="banner"></div>
+  <main id="view"></main>
+  <footer id="foot"></footer>
+
+</div>
+<script src="/vendor/minisearch.umd.js"></script>
+<script src="/vendor/marked.umd.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
