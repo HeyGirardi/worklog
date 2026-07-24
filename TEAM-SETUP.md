@@ -23,7 +23,18 @@ Everything runs on your machine, bound to 127.0.0.1 only. Your items and mention
 5. Open http://localhost:43210 — empty dashboard is correct on first run
 6. In any Claude Code session, run `/mentions` — first run stores your identity (via the Microsoft 365 connector) and pulls the last 7 days of Teams mentions; then `/archive <KEY>` at the end of a piece of work
 
-Recommended: keep your clone's git history for your own data (the skills commit automatically when git is present). Don't push your data anywhere shared — `items\`, `artifacts\`, and `mentions\` are personal.
+Recommended: keep your clone's git history for your own data (the skills commit automatically when git is present). Don't push your data anywhere shared — `items\`, `artifacts\`, and `mentions\` are personal, and your commits stay local.
+
+## Updating
+
+Your data commits live on `main` alongside the tooling, so update with a rebase, then restart:
+
+```
+git pull --rebase origin main
+powershell -ExecutionPolicy Bypass -File scripts\restart-server.ps1
+```
+
+Never `git push` — the shared repo is tooling only.
 
 ## Notes and limits
 

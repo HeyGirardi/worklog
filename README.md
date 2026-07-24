@@ -54,6 +54,7 @@ artifacts\_reports\  cross-item snapshots
 mentions\            mentions.json — Teams @mention inbox data
 skill\archive\       the /archive skill (junctioned to ~\.claude\skills\archive)
 skill\mentions\      the /mentions skill (junctioned to ~\.claude\skills\mentions)
+design-system\       generated UI design spec (MASTER.md) + implementation notes
 scripts\             install-task.ps1, install-skill.cmd, restart-server.ps1, package-team.ps1
 server.log           request log (gitignored)
 ```
