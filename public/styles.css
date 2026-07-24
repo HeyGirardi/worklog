@@ -253,9 +253,12 @@ details.card summary:hover::after { color: var(--text-primary); }
   overflow: hidden;
   min-height: calc(1.4em * 2);   /* reserve 2 lines so all cards align */
 }
-.card .next { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; max-width: 100%; }
-details.card[open] .next { white-space: normal; }
-.card .next.nonext { color: var(--text-muted); font-style: italic; }
+.card .now {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; min-width: 0;
+  min-height: calc(1.55em * 2);   /* reserve 2 lines so all cards align */
+}
+.card .now.nonow { color: var(--text-muted); font-style: italic; }
 .cardbody {
   border-top: 1px solid var(--grid);
   padding-top: 10px;
@@ -287,13 +290,25 @@ a.chip.key:hover { border-color: var(--stage-4); }
 .card h3 { font-size: 15.5px; font-weight: 600; margin: 0; line-height: 1.4; }
 .card h3 a { color: inherit; text-decoration: none; border-bottom: 1px solid var(--grid); transition: border-color .15s ease; }
 .card h3 a:hover { border-bottom-color: var(--stage-4); }
-.card .done, .card .next { margin: 0; font-size: 14px; color: var(--text-secondary); }
-.card .done strong.ok { color: var(--success-text); font-weight: 600; }
+.card .now, .cardbody .next { margin: 0; font-size: 14px; color: var(--text-secondary); }
+.card .now strong.ok, .cardbody .next strong {
+  font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
+  margin-right: 4px;
+}
+.card .now strong.ok { color: var(--success-text); }
 .card ul { margin: 0; padding-left: 20px; font-size: 14px; color: var(--text-secondary); }
 .card ul li { margin: 3px 0; }
-.card .next { border-top: 1px solid var(--grid); padding-top: 10px; margin-top: auto; }
-.card .next strong { color: var(--text-primary); }
-.card .meta { color: var(--text-muted); font-size: 12.5px; }
+.cardbody .next {
+  background: var(--page);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+.cardbody .next strong { color: var(--text-primary); }
+.card .meta {
+  color: var(--text-muted); font-size: 12.5px;
+  margin-top: auto; border-top: 1px solid var(--grid); padding-top: 8px;
+}
 
 /* ---------------------------------------------------------------- filter chips */
 .filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 16px; }

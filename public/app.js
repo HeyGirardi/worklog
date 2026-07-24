@@ -85,7 +85,14 @@ function flagChips(item) {
   return h;
 }
 
-function keyChip(key) {
+const ICON_EXT = '<svg class="ico" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>';
+
+// With a Jira URL the key chip is an external link (marked with the arrow);
+// otherwise it deep-links to the item detail view.
+function keyChip(key, jiraUrl) {
+  if (jiraUrl) {
+    return `<a class="chip key" href="${esc(jiraUrl)}" target="_blank" rel="noopener" title="Open ${esc(key)} in Jira">${esc(key)}${ICON_EXT}</a>`;
+  }
   return `<a class="chip key" href="#/item/${encodeURIComponent(key)}">${esc(key)}</a>`;
 }
 
@@ -237,16 +244,15 @@ function renderFooter(view) {
 
 /* ---------------------------------------------------------------- dashboard */
 
-// Cards are standardized: collapsed shows chips, a 2-line-clamped title, a
-// 1-line Next, and meta; Now + all Detail bullets live behind the disclosure.
+// Card anatomy (ui-ux-pro-max: truncate-with-expand, reserved space, predictable
+// links). Collapsed head: identity chips, title (-> item detail, 2-line clamp),
+// the "Now" state (2-line clamp), meta. Disclosure: the "Next" action callout,
+// then all Detail bullets — so Now always reads before Next.
 const openCards = new Set();
 
 function dashboardCard(item) {
   const sec = sections(item.body);
-  const jira = jiraLink(item);
-  const title = jira
-    ? `<a href="${esc(jira)}" target="_blank" rel="noopener">${esc(item.title)}</a>`
-    : `<a href="#/item/${encodeURIComponent(item.key)}">${esc(item.title)}</a>`;
+  const title = `<a href="#/item/${encodeURIComponent(item.key)}">${esc(item.title)}</a>`;
   const bullets = (sec.detail || '').split(/\r?\n/)
     .filter(l => l.trim().startsWith('- '))
     .map(l => `<li>${inlineMd(l.trim().slice(2))}</li>`)
@@ -254,20 +260,20 @@ function dashboardCard(item) {
   const arts = item.artifacts.length
     ? ` · ${item.artifacts.length} artifact${item.artifacts.length > 1 ? 's' : ''}` : '';
   const head = `
-    <div class="chips">${keyChip(item.key)}${statusChip(item)}${flagChips(item)}</div>
+    <div class="chips">${keyChip(item.key, jiraLink(item))}${statusChip(item)}${flagChips(item)}</div>
     <h3>${title}</h3>
-    ${sec.next ? `<p class="next"><strong>Next:</strong> ${inlineMd(sec.next)}</p>`
-                : '<p class="next nonext">No next action recorded</p>'}
+    ${sec.now ? `<p class="now"><strong class="ok">Now</strong> ${inlineMd(sec.now)}</p>`
+              : '<p class="now nonow">No current state recorded</p>'}
     <p class="meta">Updated ${fmtDate(item.updated)}${arts}</p>`;
-  const more = (sec.now || bullets)
+  const body = (sec.next || bullets)
     ? `<div class="cardbody">
-        ${sec.now ? `<p class="done"><strong class="ok">Now:</strong> ${inlineMd(sec.now)}</p>` : ''}
+        ${sec.next ? `<p class="next"><strong>Next</strong> ${inlineMd(sec.next)}</p>` : ''}
         ${bullets ? `<ul>${bullets}</ul>` : ''}
       </div>` : '';
-  if (!more) return `<div class="card">${head}</div>`;
+  if (!body) return `<div class="card">${head}</div>`;
   return `<details class="card" data-key="${esc(item.key)}"${openCards.has(item.key) ? ' open' : ''}>
     <summary>${head}</summary>
-    ${more}
+    ${body}
   </details>`;
 }
 
