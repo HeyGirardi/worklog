@@ -308,16 +308,22 @@ function renderDashboard() {
 
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-  const strip = buckets.map(b =>
-    `<div class="seg seg-${b.seg}" style="flex:${b.items.length}" title="${esc(b.title)}: ${esc(b.items.map(i => i.key).join(', '))}"></div>`
-  ).join('');
-  const labels = buckets.map(b =>
-    `<div class="lab" style="flex:${b.items.length}"><span class="swatch" style="background:var(--stage-${b.seg})"></span><span><strong>${b.items.length}</strong> ${esc(b.title)}</span></div>`
-  ).join('');
+  // Horizontal bar list (ui-ux-pro-max "Compare Categories": value labels on
+  // every bar). Kept in pipeline order, not sorted — the order is the insight.
+  const maxCount = Math.max(...buckets.map(b => b.items.length), 1);
+  const bars = buckets.map(b => `
+    <div class="barrow" title="${esc(b.items.map(i => i.key).join(', '))}">
+      <span class="barlabel">${esc(b.title)}</span>
+      <span class="bartrack"><span class="barfill seg-${b.seg}" style="width:${(b.items.length / maxCount * 100).toFixed(1)}%"></span></span>
+      <strong class="barcount">${b.items.length}</strong>
+    </div>`).join('');
 
   $('#view').innerHTML = `
     <header class="pagehead">
-      <h1>Outstanding work</h1>
+      <div class="titlerow">
+        <h1>Outstanding work</h1>
+        <button id="toggleAll" class="chip" hidden>Expand all</button>
+      </div>
       <p class="asof">As of ${today} · ${open.length} open item${open.length === 1 ? '' : 's'} · resolved items live in the <a href="#/archive">archive</a></p>
     </header>
     <div class="tiles">
@@ -328,8 +334,7 @@ function renderDashboard() {
     </div>
     ${open.length ? `<div class="pipeline">
       <h2>Where things sit</h2>
-      <div class="strip" role="img" aria-label="Pipeline: ${esc(buckets.map(b => `${b.items.length} ${b.title}`).join(', '))}">${strip}</div>
-      <div class="strip-labels">${labels}</div>
+      <div class="bars">${bars}</div>
     </div>` : '<p class="empty">Nothing open. Search the archive above.</p>'}
     ${buckets.map(b => `<section>
       <h2>${esc(b.title)} <span class="count">— ${b.items.length} item${b.items.length === 1 ? '' : 's'}</span></h2>
@@ -337,12 +342,29 @@ function renderDashboard() {
     </section>`).join('')}
   `;
 
-  // Remember expansion across re-renders (window-focus refresh re-paints).
-  for (const det of document.querySelectorAll('details.card')) {
+  // Expand/collapse all + per-card state kept across re-renders.
+  const toggleAll = $('#toggleAll');
+  const expandables = () => [...document.querySelectorAll('details.card')];
+  const syncToggleAll = () => {
+    const cards = expandables();
+    toggleAll.hidden = !cards.length;
+    if (cards.length) toggleAll.textContent = cards.some(d => !d.open) ? 'Expand all' : 'Collapse all';
+  };
+  toggleAll.addEventListener('click', () => {
+    const opening = expandables().some(d => !d.open);
+    for (const d of expandables()) {
+      d.open = opening;
+      if (opening) openCards.add(d.dataset.key); else openCards.delete(d.dataset.key);
+    }
+    syncToggleAll();
+  });
+  for (const det of expandables()) {
     det.addEventListener('toggle', () => {
       if (det.open) openCards.add(det.dataset.key); else openCards.delete(det.dataset.key);
+      syncToggleAll();
     });
   }
+  syncToggleAll();
   // Links inside the summary navigate without toggling the disclosure.
   for (const a of document.querySelectorAll('.card summary a')) {
     a.addEventListener('click', e => e.stopPropagation());

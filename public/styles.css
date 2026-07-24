@@ -176,6 +176,8 @@ a, button, summary, [role="button"] { touch-action: manipulation; }
 
 /* ---------------------------------------------------------------- header */
 header.pagehead h1 { font-size: 24px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+.titlerow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.titlerow h1 { margin: 0; }
 header.pagehead .asof { color: var(--text-secondary); font-size: 14px; margin: 0 0 24px; }
 
 /* ---------------------------------------------------------------- KPI tiles */
@@ -198,19 +200,21 @@ header.pagehead .asof { color: var(--text-secondary); font-size: 14px; margin: 0
   margin-bottom: 30px;
 }
 .pipeline h2 { font-size: 13px; font-weight: 600; color: var(--text-secondary); margin: 0 0 12px; text-transform: uppercase; letter-spacing: .05em; }
-.strip { display: flex; height: 28px; border-radius: 5px; overflow: hidden; }
-.strip .seg { position: relative; }
-.strip .seg + .seg { margin-left: 2px; }  /* 2px surface gap between fills */
 .seg-1 { background: var(--stage-1); }
 .seg-2 { background: var(--stage-2); }
 .seg-3 { background: var(--stage-3); }
 .seg-4 { background: var(--stage-4); }
 .seg-5 { background: var(--stage-5); }
-.strip-labels { display: flex; margin-top: 10px; }
-.strip-labels .lab { display: flex; align-items: baseline; gap: 7px; font-size: 13px; color: var(--text-secondary); }
-.strip-labels .lab + .lab { margin-left: 2px; }
-.strip-labels .lab .swatch { width: 10px; height: 10px; border-radius: 2px; flex: none; align-self: center; }
-.strip-labels .lab strong { color: var(--text-primary); font-weight: 600; font-family: var(--font-mono); }
+.bars { display: flex; flex-direction: column; gap: 9px; }
+.barrow {
+  display: grid; grid-template-columns: 200px minmax(0, 1fr) 2.5em;
+  gap: 12px; align-items: center;
+  font-size: 13px; color: var(--text-secondary);
+}
+.barlabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bartrack { display: block; height: 14px; background: var(--page); border-radius: 4px; }
+.barfill { display: block; height: 100%; border-radius: 4px; min-width: 4px; }
+.barcount { color: var(--text-primary); font-family: var(--font-mono); font-weight: 600; text-align: right; }
 
 /* ---------------------------------------------------------------- sections & cards */
 section h2 { font-size: 16px; font-weight: 600; margin: 30px 0 12px; }
@@ -518,6 +522,7 @@ footer code { font-family: var(--font-mono); font-size: 12px; }
 @media (max-width: 760px) {
   .tiles { grid-template-columns: repeat(2, 1fr); }
   .cards { grid-template-columns: minmax(0, 1fr); }
+  .barrow { grid-template-columns: 120px minmax(0, 1fr) 2em; }
   .detail-grid { grid-template-columns: 1fr; }
   #search { width: 100%; }
 }
