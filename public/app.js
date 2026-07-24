@@ -71,7 +71,7 @@ function sections(body) {
 function statusChip(item) {
   const meta = STATUS[item.status] || { label: item.status, dot: 'var(--text-muted)' };
   const label = item.stage && item.stage !== meta.label ? esc(item.stage) : meta.label;
-  return `<span class="chip"><span class="dot" style="background:${meta.dot}"></span>${label}</span>`;
+  return `<span class="chip" title="${label}"><span class="dot" style="background:${meta.dot}"></span><span class="lbl">${label}</span></span>`;
 }
 
 // Inline SVG chip icons (Lucide check / triangle-alert) — no emoji glyphs.
@@ -80,8 +80,8 @@ const ICON_WARN = '<svg class="ico" width="11" height="11" viewBox="0 0 24 24" f
 
 function flagChips(item) {
   let h = '';
-  if (item.ready) h += `<span class="chip ready">${ICON_CHECK}${esc(item.ready)}</span>`;
-  if (item.attention) h += `<span class="chip attn">${ICON_WARN}${esc(item.attention)}</span>`;
+  if (item.ready) h += `<span class="chip ready" title="${esc(item.ready)}">${ICON_CHECK}<span class="lbl">${esc(item.ready)}</span></span>`;
+  if (item.attention) h += `<span class="chip attn" title="${esc(item.attention)}">${ICON_WARN}<span class="lbl">${esc(item.attention)}</span></span>`;
   return h;
 }
 
@@ -260,7 +260,8 @@ function dashboardCard(item) {
   const arts = item.artifacts.length
     ? ` · ${item.artifacts.length} artifact${item.artifacts.length > 1 ? 's' : ''}` : '';
   const head = `
-    <div class="chips">${keyChip(item.key, jiraLink(item))}${statusChip(item)}${flagChips(item)}</div>
+    <div class="chips keyline">${keyChip(item.key, jiraLink(item))}</div>
+    <div class="chips stateline">${statusChip(item)}${flagChips(item)}</div>
     <h3>${title}</h3>
     ${sec.now ? `<p class="now"><strong class="ok">Now</strong> ${inlineMd(sec.now)}</p>`
               : '<p class="now nonow">No current state recorded</p>'}

@@ -242,7 +242,10 @@ details.card summary {
   min-width: 0;
 }
 details.card summary::-webkit-details-marker { display: none; }
-details.card summary .chips { padding-right: 24px; }  /* reserve the chevron's corner */
+details.card summary .keyline { padding-right: 24px; }  /* reserve the chevron's corner */
+/* status + flag chips: one strict line under the key; truncate rather than wrap */
+.card .stateline { flex-wrap: nowrap; overflow: hidden; }
+.card .keyline + .stateline { margin-top: -4px; }
 details.card summary::after {
   content: '\25B8';
   position: absolute; right: 0; top: 0;
@@ -283,8 +286,10 @@ details.card summary:hover::after { color: var(--text-primary); }
   text-decoration: none;
   transition: border-color .15s ease, background-color .15s ease, color .15s ease;
 }
+.chip { min-width: 0; }
 .chip .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
-.chip .ico { display: inline-flex; align-items: center; }
+.chip .ico { display: inline-flex; align-items: center; flex: none; }
+.chip .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chip.key { color: var(--text-primary); font-family: var(--font-mono); font-weight: 600; font-size: 12px; }
 a.chip.key { cursor: pointer; }
 a.chip.key:hover { border-color: var(--stage-4); }
