@@ -86,6 +86,7 @@ function flagChips(item) {
 }
 
 const ICON_EXT = '<svg class="ico" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>';
+const ICON_CLOCK = '<svg class="ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
 
 // With a Jira URL the key chip is an external link (marked with the arrow);
 // otherwise it deep-links to the item detail view.
@@ -308,15 +309,22 @@ function renderDashboard() {
 
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-  // Horizontal bar list (ui-ux-pro-max "Compare Categories": value labels on
-  // every bar). Kept in pipeline order, not sorted — the order is the insight.
-  const maxCount = Math.max(...buckets.map(b => b.items.length), 1);
-  const bars = buckets.map(b => `
-    <div class="barrow" title="${esc(b.items.map(i => i.key).join(', '))}">
-      <span class="barlabel">${esc(b.title)}</span>
-      <span class="bartrack"><span class="barfill seg-${b.seg}" style="width:${(b.items.length / maxCount * 100).toFixed(1)}%"></span></span>
-      <strong class="barcount">${b.items.length}</strong>
-    </div>`).join('');
+  // Waffle / unit chart (ui-ux-pro-max: waffle for stacked proportions):
+  // one square per open item, colored by stage, in pipeline order. Each
+  // square links to its item; the legend carries the counts.
+  const cells = buckets.flatMap(b => b.items.map(i =>
+    `<a class="wcell seg-${b.seg}" href="#/item/${encodeURIComponent(i.key)}" title="${esc(i.key)} — ${esc(b.title)}"></a>`)).join('');
+  const legend = buckets.map(b =>
+    `<span class="lab"><span class="swatch seg-${b.seg}"></span><strong>${b.items.length}</strong> ${esc(b.title)}</span>`).join('');
+
+  // Condensed stat panel: hero open-count + flag rows with proportion bars.
+  const flagRow = (icon, count, label, color) => `
+    <div class="flagrow">
+      <span class="fico" style="color:${color}">${icon}</span>
+      <strong class="cnt">${count}</strong>
+      <span class="flabel">${label}</span>
+      <span class="minitrack"><span class="minifill" style="width:${open.length ? (count / open.length * 100).toFixed(1) : 0}%;background:${color}"></span></span>
+    </div>`;
 
   $('#view').innerHTML = `
     <header class="pagehead">
@@ -324,17 +332,23 @@ function renderDashboard() {
         <h1>Outstanding work</h1>
         <button id="toggleAll" class="chip" hidden>Expand all</button>
       </div>
-      <p class="asof">As of ${today} · ${open.length} open item${open.length === 1 ? '' : 's'} · resolved items live in the <a href="#/archive">archive</a></p>
+      <p class="asof">As of ${today} · resolved items live in the <a href="#/archive">archive</a></p>
     </header>
-    <div class="tiles">
-      <div class="tile"><div class="value">${open.length}</div><div class="label">Open items</div></div>
-      <div class="tile"><div class="value">${ready}</div><div class="label">Flagged ready (&#10003;)</div></div>
-      <div class="tile"><div class="value">${attn}</div><div class="label">Need attention (&#9888;)</div></div>
-      <div class="tile"><div class="value">${waiting}</div><div class="label">Waiting on others</div></div>
-    </div>
-    ${open.length ? `<div class="pipeline">
-      <h2>Where things sit</h2>
-      <div class="bars">${bars}</div>
+    ${open.length ? `<div class="duo">
+      <div class="pipeline statpanel">
+        <h2>Open work</h2>
+        <div class="hero"><span class="heronum">${open.length}</span><span class="herolabel">open item${open.length === 1 ? '' : 's'}</span></div>
+        <div class="flagrows">
+          ${flagRow(ICON_CHECK, ready, 'flagged ready', 'var(--status-good)')}
+          ${flagRow(ICON_WARN, attn, 'need attention', 'var(--status-warning)')}
+          ${flagRow(ICON_CLOCK, waiting, 'waiting on others', 'var(--stage-4)')}
+        </div>
+      </div>
+      <div class="pipeline">
+        <h2>Where things sit</h2>
+        <div class="waffle">${cells}</div>
+        <div class="wlegend">${legend}</div>
+      </div>
     </div>` : '<p class="empty">Nothing open. Search the archive above.</p>'}
     ${buckets.map(b => `<section>
       <h2>${esc(b.title)} <span class="count">— ${b.items.length} item${b.items.length === 1 ? '' : 's'}</span></h2>
