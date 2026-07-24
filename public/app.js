@@ -86,7 +86,6 @@ function flagChips(item) {
 }
 
 const ICON_EXT = '<svg class="ico" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>';
-const ICON_CLOCK = '<svg class="ico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
 
 // With a Jira URL the key chip is an external link (marked with the arrow);
 // otherwise it deep-links to the item detail view.
@@ -279,6 +278,50 @@ function dashboardCard(item) {
   </details>`;
 }
 
+// Concentric progress rings, outer -> inner. Each ring is an independent
+// fraction of open work (the flags overlap, so they never form one pie).
+function ringsSVG(rings, center) {
+  const radii = [48, 37, 26], W = 9;
+  const arcs = rings.map((r, i) => {
+    const R = radii[i], C = 2 * Math.PI * R;
+    const len = r.frac > 0 ? Math.max(r.frac * C, 2) : 0;
+    return `
+      <circle r="${R}" cx="60" cy="60" fill="none" style="stroke:var(--page)" stroke-width="${W}"></circle>
+      <circle r="${R}" cx="60" cy="60" fill="none" style="stroke:${r.color}" stroke-width="${W}" stroke-linecap="round"
+        stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}"><title>${esc(r.label)}: ${r.count}</title></circle>`;
+  }).join('');
+  return `<svg class="viz" viewBox="0 0 120 120" role="img"
+    aria-label="${esc(`${center.value} open; ` + rings.map(r => `${r.count} ${r.label}`).join(', '))}">
+    <g transform="rotate(-90 60 60)">${arcs}</g>
+    <text x="60" y="60" text-anchor="middle" class="vnum">${center.value}</text>
+    <text x="60" y="76" text-anchor="middle" class="vlab">${esc(center.label)}</text>
+  </svg>`;
+}
+
+// Donut of parts-of-a-whole segments with 2px surface gaps, pipeline order.
+function donutSVG(segs, center) {
+  const R = 40, C = 2 * Math.PI * R;
+  const total = segs.reduce((s, x) => s + x.count, 0) || 1;
+  const visible = segs.filter(s => s.count > 0);
+  const gap = visible.length > 1 ? 2 : 0;
+  let off = 0;
+  const circles = visible.map(s => {
+    const len = s.count / total * C;
+    const dash = Math.max(len - gap, 1.5);
+    const c = `<circle r="${R}" cx="60" cy="60" fill="none" style="stroke:${s.color}" stroke-width="15"
+      stroke-dasharray="${dash.toFixed(2)} ${(C - dash).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}">
+      <title>${esc(s.label)}: ${s.count}${s.keys ? ' — ' + esc(s.keys) : ''}</title></circle>`;
+    off += len;
+    return c;
+  }).join('');
+  return `<svg class="viz" viewBox="0 0 120 120" role="img"
+    aria-label="${esc(segs.map(s => `${s.count} ${s.label}`).join(', '))}">
+    <g transform="rotate(-90 60 60)">${circles}</g>
+    <text x="60" y="60" text-anchor="middle" class="vnum">${center.value}</text>
+    <text x="60" y="76" text-anchor="middle" class="vlab">${esc(center.label)}</text>
+  </svg>`;
+}
+
 // Two independent columns (alternating fill = same positions as the old grid)
 // so an expanded card only pushes down its own column, not the whole row below.
 const twoColMq = window.matchMedia('(min-width: 761px)');
@@ -309,22 +352,25 @@ function renderDashboard() {
 
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-  // Waffle / unit chart (ui-ux-pro-max: waffle for stacked proportions):
-  // one square per open item, colored by stage, in pipeline order. Each
-  // square links to its item; the legend carries the counts.
-  const cells = buckets.flatMap(b => b.items.map(i =>
-    `<a class="wcell seg-${b.seg}" href="#/item/${encodeURIComponent(i.key)}" title="${esc(i.key)} — ${esc(b.title)}"></a>`)).join('');
-  const legend = buckets.map(b =>
-    `<span class="lab"><span class="swatch seg-${b.seg}"></span><strong>${b.items.length}</strong> ${esc(b.title)}</span>`).join('');
+  // Two SVG summary charts. Rings: the three flags are OVERLAPPING subsets of
+  // open work (a pie would falsely imply they sum), so each gets its own
+  // proportion ring. Donut: the stages ARE parts of the whole, so a stacked
+  // ring is honest; segments keep the sequential stage ramp and 2px gaps.
+  const rings = [
+    { count: ready, frac: open.length ? ready / open.length : 0, color: 'var(--status-good)', label: 'flagged ready' },
+    { count: attn, frac: open.length ? attn / open.length : 0, color: 'var(--status-warning)', label: 'need attention' },
+    { count: waiting, frac: open.length ? waiting / open.length : 0, color: 'var(--stage-4)', label: 'waiting on others' },
+  ];
+  const segs = buckets.map(b => ({
+    count: b.items.length,
+    color: `var(--stage-${b.seg})`,
+    label: b.title,
+    keys: b.items.map(i => i.key).join(', '),
+  }));
+  const doNow = buckets.find(b => b.title === 'Do now');
 
-  // Condensed stat panel: hero open-count + flag rows with proportion bars.
-  const flagRow = (icon, count, label, color) => `
-    <div class="flagrow">
-      <span class="fico" style="color:${color}">${icon}</span>
-      <strong class="cnt">${count}</strong>
-      <span class="flabel">${label}</span>
-      <span class="minitrack"><span class="minifill" style="width:${open.length ? (count / open.length * 100).toFixed(1) : 0}%;background:${color}"></span></span>
-    </div>`;
+  const legendFor = items => `<div class="vizlegend">${items.map(s =>
+    `<span class="lab"><span class="swatch" style="background:${s.color}"></span><strong>${s.count}</strong> ${esc(s.label)}</span>`).join('')}</div>`;
 
   $('#view').innerHTML = `
     <header class="pagehead">
@@ -335,19 +381,19 @@ function renderDashboard() {
       <p class="asof">As of ${today} · resolved items live in the <a href="#/archive">archive</a></p>
     </header>
     ${open.length ? `<div class="duo">
-      <div class="pipeline statpanel">
+      <div class="pipeline vizpanel">
         <h2>Open work</h2>
-        <div class="hero"><span class="heronum">${open.length}</span><span class="herolabel">open item${open.length === 1 ? '' : 's'}</span></div>
-        <div class="flagrows">
-          ${flagRow(ICON_CHECK, ready, 'flagged ready', 'var(--status-good)')}
-          ${flagRow(ICON_WARN, attn, 'need attention', 'var(--status-warning)')}
-          ${flagRow(ICON_CLOCK, waiting, 'waiting on others', 'var(--stage-4)')}
+        <div class="vizrow">
+          ${ringsSVG(rings, { value: open.length, label: 'open' })}
+          ${legendFor(rings)}
         </div>
       </div>
-      <div class="pipeline">
+      <div class="pipeline vizpanel">
         <h2>Where things sit</h2>
-        <div class="waffle">${cells}</div>
-        <div class="wlegend">${legend}</div>
+        <div class="vizrow">
+          ${donutSVG(segs, { value: doNow ? doNow.items.length : 0, label: 'do now' })}
+          ${legendFor(segs)}
+        </div>
       </div>
     </div>` : '<p class="empty">Nothing open. Search the archive above.</p>'}
     ${buckets.map(b => `<section>

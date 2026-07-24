@@ -213,29 +213,21 @@ header.pagehead .asof { color: var(--text-secondary); font-size: 14px; margin: 0
 }
 .duo .pipeline { margin-bottom: 0; }
 
-/* stat panel: hero count + flag rows with proportion mini-bars */
-.statpanel .hero { display: flex; align-items: baseline; gap: 10px; margin-bottom: 16px; }
-.heronum { font-size: 40px; font-weight: 600; line-height: 1; font-family: var(--font-mono); color: var(--text-primary); }
-.herolabel { color: var(--text-secondary); font-size: 14px; }
-.flagrows { display: flex; flex-direction: column; gap: 10px; }
-.flagrow {
-  display: grid; grid-template-columns: 16px 2.2em minmax(0, 1fr) 90px;
-  gap: 10px; align-items: center;
-  font-size: 13.5px; color: var(--text-secondary);
+/* summary charts: rings (flag proportions) + donut (stage composition) */
+.vizrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
+.viz { width: 148px; height: 148px; flex: none; }
+.vnum {
+  font-family: var(--font-mono); font-weight: 600; font-size: 24px;
+  fill: var(--text-primary); dominant-baseline: middle;
 }
-.flagrow .fico { display: inline-flex; }
-.flagrow .cnt { font-family: var(--font-mono); font-weight: 600; color: var(--text-primary); }
-.flagrow .flabel { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.minitrack { display: block; height: 8px; background: var(--page); border-radius: 4px; }
-.minifill { display: block; height: 100%; border-radius: 4px; min-width: 3px; }
-
-/* waffle: one square per open item, stage-colored, click -> item detail */
-.waffle { display: flex; flex-wrap: wrap; gap: 4px; }
-.wcell { width: 18px; height: 18px; border-radius: 4px; display: block; }
-.wcell:hover { outline: 2px solid var(--focus); outline-offset: 1px; }
-.wlegend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin-top: 14px; font-size: 13px; color: var(--text-secondary); }
-.wlegend .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
-.wlegend strong { color: var(--text-primary); font-family: var(--font-mono); }
+.vlab {
+  font-family: var(--font-sans); font-size: 8.5px; letter-spacing: .06em; text-transform: uppercase;
+  fill: var(--text-secondary);
+}
+.vizlegend { display: flex; flex-direction: column; gap: 9px; font-size: 13.5px; color: var(--text-secondary); min-width: 0; }
+.vizlegend .lab { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.vizlegend .swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.vizlegend strong { color: var(--text-primary); font-family: var(--font-mono); min-width: 1.4em; text-align: right; flex: none; }
 
 /* ---------------------------------------------------------------- sections & cards */
 section h2 { font-size: 16px; font-weight: 600; margin: 30px 0 12px; }
