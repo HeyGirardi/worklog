@@ -278,6 +278,21 @@ function dashboardCard(item) {
   </details>`;
 }
 
+// Two independent columns (alternating fill = same positions as the old grid)
+// so an expanded card only pushes down its own column, not the whole row below.
+const twoColMq = window.matchMedia('(min-width: 761px)');
+twoColMq.addEventListener('change', () => { if (parseHash().view === 'dash') render(); });
+
+function cardColumns(items) {
+  if (!twoColMq.matches || items.length < 2) {
+    return `<div class="cards">${items.map(i => dashboardCard(i)).join('')}</div>`;
+  }
+  const cols = [[], []];
+  items.forEach((it, i) => cols[i % 2].push(it));
+  return `<div class="cards twocol">${cols.map(c =>
+    `<div class="cardcol">${c.map(i => dashboardCard(i)).join('')}</div>`).join('')}</div>`;
+}
+
 function renderDashboard() {
   const open = state.items.filter(OPEN);
   const assigned = new Set();
@@ -318,7 +333,7 @@ function renderDashboard() {
     </div>` : '<p class="empty">Nothing open. Search the archive above.</p>'}
     ${buckets.map(b => `<section>
       <h2>${esc(b.title)} <span class="count">— ${b.items.length} item${b.items.length === 1 ? '' : 's'}</span></h2>
-      <div class="cards">${b.items.map(i => dashboardCard(i)).join('')}</div>
+      ${cardColumns(b.items)}
     </section>`).join('')}
   `;
 
