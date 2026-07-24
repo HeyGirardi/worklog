@@ -1,16 +1,16 @@
 # Worklog
 
-Local-first work dashboard for [Claude Code](https://claude.com/claude-code) users: a searchable archive of every work item (`PROJ-123`-style Jira keys, or `LOCAL-n` for non-ticketed chores), a live open-items dashboard, and a Teams @mentions inbox. Runs permanently at **http://localhost:43210** (bound to 127.0.0.1 only — nothing leaves your machine).
+Local-first work dashboard for [Claude Code](https://claude.com/claude-code) users: a searchable archive of every work item (`PROJ-123`-style Jira keys, or `LOCAL-n` for non-ticketed chores), a live open-items dashboard, and a Teams @mentions inbox. Runs permanently at **http://localhost:43210** (bound to 127.0.0.1 only - nothing leaves your machine).
 
-- **Dashboard** (`#/`): open items grouped by stage — KPI tiles, pipeline strip, cards.
+- **Dashboard** (`#/`): open items grouped by stage - KPI tiles, pipeline strip, cards.
 - **Archive** (`#/archive`): every item, searchable and filterable. Typing `142` finds PROJ-142; `proj-142`, `PROJ-142`, or `142` all work; free text searches titles, bodies, and tags. Enter jumps straight to a single ID match. `/` focuses the search box.
 - **Item detail** (`#/item/PROJ-142`): rendered notes, links, related items, artifacts, and related **Claude sessions**.
 - **Mentions** (`#/mentions`): Teams messages that directly @mention you, with per-message mark-complete.
 
 Data gets in through two Claude Code skills (both in `skill\`, installed as junctions by `scripts\install-skill.cmd`):
 
-- **`/archive <KEY>`** — files a work item at the end of a session: verifies against Jira/GitHub where connectors are available, writes `items\<KEY>.md`, files artifacts, commits.
-- **`/mentions`** — pulls Teams chat messages that directly @mention you (via the Microsoft 365 connector), classifies them action/question/FYI, and merges them into the inbox.
+- **`/archive <KEY>`** - files a work item at the end of a session: verifies against Jira/GitHub where connectors are available, writes `items\<KEY>.md`, files artifacts, commits.
+- **`/mentions`** - pulls Teams chat messages that directly @mention you (via the Microsoft 365 connector), classifies them action/question/FYI, and merges them into the inbox.
 
 New machine? Follow **TEAM-SETUP.md** (about 5 minutes).
 
@@ -21,9 +21,9 @@ Copy `config.example.json` to `config.json` (gitignored) and edit. All fields op
 | Field | Purpose | Default |
 |---|---|---|
 | `port` | server port | `43210` |
-| `projectKeys` | your Jira project prefixes, e.g. `["PROJ", "OPS", "LOCAL"]` — narrows session scanning | any `KEY-123` pattern |
-| `jiraBaseUrl` | used by the `/archive` skill for issue links | — |
-| `githubOwner` | used by the `/archive` skill for `gh pr view` checks | — |
+| `projectKeys` | your Jira project prefixes, e.g. `["PROJ", "OPS", "LOCAL"]` - narrows session scanning | any `KEY-123` pattern |
+| `jiraBaseUrl` | used by the `/archive` skill for issue links | - |
+| `githubOwner` | used by the `/archive` skill for `gh pr view` checks | - |
 
 ## Claude sessions
 
@@ -31,13 +31,13 @@ The item detail view auto-discovers related Claude Code sessions by scanning `~\
 
 Each collapsible card shows the date range, first prompt, and message count; expanded it gives:
 - a **copyable resume command**: `cd "<original cwd>"; claude --resume <session-id>`
-- a **Generate recap** button — runs `claude -p --resume <id> --fork-session --no-session-persistence "/recap"` (read-only fork, the original session is never modified). This is a real API call (~30–90 s, normal token cost). Results are cached in `.cache\recaps\<id>.md`.
+- a **Generate recap** button - runs `claude -p --resume <id> --fork-session --no-session-persistence "/recap"` (read-only fork, the original session is never modified). This is a real API call (~30–90 s, normal token cost). Results are cached in `.cache\recaps\<id>.md`.
 
 API: `GET /api/sessions/<KEY>` · `POST /api/sessions/<id>/recap`.
 
 ## Teams mentions
 
-`#/mentions` (a SPA route like the rest; the old `/mentions` path 302-redirects) is an inbox of Teams chat messages that directly @mention you. Data lives in `mentions\mentions.json` and gets there via the **`/mentions` skill**, which searches Teams through the Microsoft 365 MCP connector, keeps only messages whose `mentions[]` include your AAD id, classifies each as action/question/FYI, and merges without ever touching completed state. "Mark complete" / "Reopen" on the page hit `POST /api/mentions/<id>/complete|reopen`. Coverage caveat: the Graph search path used with date filters only scans 1:1/group/meeting chats — Teams **channel** messages never appear.
+`#/mentions` (a SPA route like the rest; the old `/mentions` path 302-redirects) is an inbox of Teams chat messages that directly @mention you. Data lives in `mentions\mentions.json` and gets there via the **`/mentions` skill**, which searches Teams through the Microsoft 365 MCP connector, keeps only messages whose `mentions[]` include your AAD id, classifies each as action/question/FYI, and merges without ever touching completed state. "Mark complete" / "Reopen" on the page hit `POST /api/mentions/<id>/complete|reopen`. Coverage caveat: the Graph search path used with date filters only scans 1:1/group/meeting chats - Teams **channel** messages never appear.
 
 API: `GET /api/mentions` · `POST /api/mentions/<id>/complete` · `POST /api/mentions/<id>/reopen`.
 
@@ -51,7 +51,7 @@ public\              SPA: index.html, app.js, styles.css,
 items\<KEY>.md       one file per work item
 artifacts\<KEY>\     files belonging to an item (auto-scanned, no manifest)
 artifacts\_reports\  cross-item snapshots
-mentions\            mentions.json — Teams @mention inbox data
+mentions\            mentions.json - Teams @mention inbox data
 skill\archive\       the /archive skill (junctioned to ~\.claude\skills\archive)
 skill\mentions\      the /mentions skill (junctioned to ~\.claude\skills\mentions)
 design-system\       generated UI design spec (MASTER.md) + implementation notes
@@ -108,12 +108,12 @@ The dashboard extracts `## Now`, `## Next`, and the first three `## Detail` bull
 | What | How |
 |---|---|
 | Status | `Get-ScheduledTaskInfo WorklogServer` (LastTaskResult 267009 = running) |
-| Restart (e.g. after editing server.js) | `powershell -ExecutionPolicy Bypass -File scripts\restart-server.ps1` — plain `Stop-ScheduledTask` can leave the node process holding the port |
+| Restart (e.g. after editing server.js) | `powershell -ExecutionPolicy Bypass -File scripts\restart-server.ps1` - plain `Stop-ScheduledTask` can leave the node process holding the port |
 | Run in foreground (debugging) | stop the task, then `node server.js` in this folder |
 | Reinstall the task | `powershell -ExecutionPolicy Bypass -File scripts\install-task.ps1` |
 | Reinstall the skill junctions | `scripts\install-skill.cmd` (installs every `skill\*`) |
 | Change port | set `port` in `config.json`, restart the task |
-| Package for a teammate without GitHub access | `powershell -ExecutionPolicy Bypass -File scripts\package-team.ps1` — zips the tooling without personal data; add `-Internal` to bundle the real `config.json` + a START-HERE guide (team sharing only, never public) |
+| Package for a teammate without GitHub access | `powershell -ExecutionPolicy Bypass -File scripts\package-team.ps1` - zips the tooling without personal data; add `-Internal` to bundle the real `config.json` + a START-HERE guide (team sharing only, never public) |
 | Request log | `server.log` in this folder |
 
 The task runs at logon with `S4U` (no console window), `ExecutionTimeLimit` disabled (default would kill it after 72 h), and restarts up to 3 times a minute apart on failure.
@@ -121,9 +121,9 @@ The task runs at logon with `S4U` (no console window), `ExecutionTimeLimit` disa
 ## Escape hatches / notes
 
 - **Parser**: hand-rolled for the fixed subset above. If items ever need freeform YAML, swap `parseFrontmatter` in `server.js` for `gray-matter` (~20-line change).
-- **Sanitization**: item bodies are rendered with `marked` without DOMPurify — everything there is self-authored on localhost. Mention bodies ARE sanitized (DOMPurify) because Teams message HTML is authored by other people.
-- **Vendored libs**: `public\vendor\` — minisearch 7.2.0 (`dist/umd/index.js`), marked 18.0.7 (`lib/marked.umd.js`), dompurify 3.4.12 (`dist/purify.min.js`); versions noted in each file's header comment. No CDN at runtime.
+- **Sanitization**: item bodies are rendered with `marked` without DOMPurify - everything there is self-authored on localhost. Mention bodies ARE sanitized (DOMPurify) because Teams message HTML is authored by other people.
+- **Vendored libs**: `public\vendor\` - minisearch 7.2.0 (`dist/umd/index.js`), marked 18.0.7 (`lib/marked.umd.js`), dompurify 3.4.12 (`dist/purify.min.js`); versions noted in each file's header comment. No CDN at runtime.
 
 ## License
 
-MIT — see `LICENSE`.
+MIT - see `LICENSE`.

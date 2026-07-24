@@ -1,6 +1,6 @@
 # Builds a shareable zip of the worklog tooling next to the repo root.
-#   default:    worklog-team-<date>.zip          — public-safe: config.example.json only
-#   -Internal:  worklog-team-internal-<date>.zip — adds the real config.json and a
+#   default:    worklog-team-<date>.zip          - public-safe: config.example.json only
+#   -Internal:  worklog-team-internal-<date>.zip - adds the real config.json and a
 #               tailored START-HERE.md; for sharing inside the team only
 # Personal data (items, artifacts, mentions data, caches, logs, git history) is
 # never included in either variant.
@@ -24,7 +24,7 @@ foreach ($p in $include) {
 
 if ($Internal) {
   @'
-# Worklog — start here (internal package)
+# Worklog - start here (internal package)
 
 Local work dashboard + two Claude Code skills. Runs entirely on your machine
 (bound to 127.0.0.1); your data never leaves it.
@@ -39,19 +39,19 @@ Local work dashboard + two Claude Code skills. Runs entirely on your machine
    (registers the WorklogServer scheduled task: starts at logon, starts now)
 3. `scripts\install-skill.cmd`
    (installs the `/archive` and `/mentions` skills into Claude Code, user-level)
-4. Open http://localhost:43210 — an empty dashboard is correct on first run
-5. In any Claude Code session run `/mentions` — the first run stores your
+4. Open http://localhost:43210 - an empty dashboard is correct on first run
+5. In any Claude Code session run `/mentions` - the first run stores your
    identity and pulls your last 7 days of Teams mentions
 6. At the end of a piece of work run `/archive <KEY>`
 
-## Configuration — already done
+## Configuration - already done
 
 `config.json` ships pre-filled for our team: the Jira base URL, our project
 keys, and the GitHub org used by `/archive` for PR checks. You do not need to
 edit anything (the port, 43210, lives there too if you ever need to change it).
 
 Teams needs NO config file: `/mentions` authenticates through YOUR Microsoft
-365 connector in Claude Code — enable it under claude.ai connectors and sign
+365 connector in Claude Code - enable it under claude.ai connectors and sign
 in with your work account before the first run. Jira verification works the
 same way through the Atlassian connector (optional), and PR checks use the
 `gh` CLI if you have it (optional).
@@ -63,8 +63,15 @@ folders (`items\`, `artifacts\`, `mentions\`), then:
 `powershell -ExecutionPolicy Bypass -File scripts\restart-server.ps1`
 
 Full docs: `README.md`. (`TEAM-SETUP.md` is the generic GitHub-clone variant of
-this guide — this file supersedes it for zip installs.)
+this guide - this file supersedes it for zip installs.)
 '@ | Set-Content (Join-Path $stage 'START-HERE.md') -Encoding UTF8
+}
+
+# Windows viewers default to ANSI when a file has no BOM, which turns UTF-8
+# punctuation into mojibake; stamp a UTF-8 BOM on every shipped markdown file.
+$utf8Bom = New-Object System.Text.UTF8Encoding $true
+Get-ChildItem $stage -Recurse -Filter *.md | ForEach-Object {
+  [IO.File]::WriteAllText($_.FullName, [IO.File]::ReadAllText($_.FullName), $utf8Bom)
 }
 
 if (Test-Path $zip) { Remove-Item $zip }

@@ -5,14 +5,14 @@ description: Sync Teams messages that directly @mention the user into the worklo
 
 # Sync Teams mentions
 
-Paths — `WORKLOG` = the worklog repo root. Resolve it from the skill junction: `powershell -c "(Get-Item $env:USERPROFILE\.claude\skills\mentions).Target"` and strip the trailing `\skill\mentions`.
+Paths - `WORKLOG` = the worklog repo root. Resolve it from the skill junction: `powershell -c "(Get-Item $env:USERPROFILE\.claude\skills\mentions).Target"` and strip the trailing `\skill\mentions`.
 - Data: `<WORKLOG>\mentions\mentions.json`
 - UI: `http://localhost:43210/#/mentions` (port configurable in `<WORKLOG>\config.json`)
 - API: `GET /api/mentions` · `POST /api/mentions/<id>/complete` · `POST /api/mentions/<id>/reopen`
 
 Required MCP tools (claude.ai Microsoft 365 connector; load via ToolSearch if deferred):
 `mcp__claude_ai_Microsoft_365__chat_message_search`, `mcp__claude_ai_Microsoft_365__read_resource`, `mcp__claude_ai_Microsoft_365__get_me`.
-If the connector is unavailable (headless run, not signed in), STOP and tell the user — never fabricate messages.
+If the connector is unavailable (headless run, not signed in), STOP and tell the user - never fabricate messages.
 
 ## 1. Identity and window
 
@@ -28,14 +28,14 @@ If the connector is unavailable (headless run, not signed in), STOP and tell the
 
 For each result id not already in `messages` (or already present but with a newer `lastModifiedDateTime`):
 - `read_resource` the message URI.
-- Keep only messages where `mentions[]` contains an entry with `mentioned.id == user.id` — that is the definition of "mentions me directly". Skip messages sent by the user (`from.id == user.id`) and deleted messages (`deletedDateTime` set).
+- Keep only messages where `mentions[]` contains an entry with `mentioned.id == user.id` - that is the definition of "mentions me directly". Skip messages sent by the user (`from.id == user.id`) and deleted messages (`deletedDateTime` set).
 
 ## 4. Classify
 
 Set `kind`:
-- `action` — asks the user to do something (review, test, take a look, "leave that for you", "can you <verb>", work assigned).
-- `question` — asks the user for information or confirmation.
-- `fyi` — everything else (announcements, process notes, status).
+- `action` - asks the user to do something (review, test, take a look, "leave that for you", "can you <verb>", work assigned).
+- `question` - asks the user for information or confirmation.
+- `fyi` - everything else (announcements, process notes, status).
 When both action and question apply, prefer `action`.
 
 ## 5. Merge and write
@@ -64,14 +64,14 @@ Message shape (all fields required, `completed` is `null` or an ISO timestamp):
 
 ## 6. Validate and report
 
-1. `curl -s http://127.0.0.1:43210/api/mentions` — parses, and new ids appear. Server down → files are still valid; skip silently.
-2. `git -C <WORKLOG> add mentions && git -C <WORKLOG> commit -m "mentions: sync <YYYY-MM-DD> — <N> new"` (skip commit when nothing changed, or when the repo has no git history).
+1. `curl -s http://127.0.0.1:43210/api/mentions` - parses, and new ids appear. Server down → files are still valid; skip silently.
+2. `git -C <WORKLOG> add mentions && git -C <WORKLOG> commit -m "mentions: sync <YYYY-MM-DD> - <N> new"` (skip commit when nothing changed, or when the repo has no git history).
 3. Tell the user: `<N> new, <open> open → http://localhost:43210/#/mentions`, plus the standing caveat that channel messages are not covered (only 1:1/group/meeting chats).
 
 ## Completing from chat
 
 When the user says a mention is handled ("mark the PROJ-142 one done"): find its id in `mentions.json`, then
-`curl -s -X POST http://127.0.0.1:43210/api/mentions/<id>/complete` (or `/reopen` to undo). Do not edit `completed` in the file by hand while the server is running — the endpoint avoids write races.
+`curl -s -X POST http://127.0.0.1:43210/api/mentions/<id>/complete` (or `/reopen` to undo). Do not edit `completed` in the file by hand while the server is running - the endpoint avoids write races.
 
 ## Rules
 
