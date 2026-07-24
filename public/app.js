@@ -237,7 +237,11 @@ function renderFooter(view) {
 
 /* ---------------------------------------------------------------- dashboard */
 
-function dashboardCard(item, seg) {
+// Cards are standardized: collapsed shows chips, a 2-line-clamped title, a
+// 1-line Next, and meta; Now + all Detail bullets live behind the disclosure.
+const openCards = new Set();
+
+function dashboardCard(item) {
   const sec = sections(item.body);
   const jira = jiraLink(item);
   const title = jira
@@ -245,19 +249,26 @@ function dashboardCard(item, seg) {
     : `<a href="#/item/${encodeURIComponent(item.key)}">${esc(item.title)}</a>`;
   const bullets = (sec.detail || '').split(/\r?\n/)
     .filter(l => l.trim().startsWith('- '))
-    .slice(0, 3)
     .map(l => `<li>${inlineMd(l.trim().slice(2))}</li>`)
     .join('');
   const arts = item.artifacts.length
     ? ` · ${item.artifacts.length} artifact${item.artifacts.length > 1 ? 's' : ''}` : '';
-  return `<div class="card">
+  const head = `
     <div class="chips">${keyChip(item.key)}${statusChip(item)}${flagChips(item)}</div>
     <h3>${title}</h3>
-    ${sec.now ? `<p class="done"><strong class="ok">Now:</strong> ${inlineMd(sec.now)}</p>` : ''}
-    ${bullets ? `<ul>${bullets}</ul>` : ''}
-    ${sec.next ? `<p class="next"><strong>Next:</strong> ${inlineMd(sec.next)}</p>` : ''}
-    <p class="meta">Updated ${fmtDate(item.updated)}${arts}</p>
-  </div>`;
+    ${sec.next ? `<p class="next"><strong>Next:</strong> ${inlineMd(sec.next)}</p>`
+                : '<p class="next nonext">No next action recorded</p>'}
+    <p class="meta">Updated ${fmtDate(item.updated)}${arts}</p>`;
+  const more = (sec.now || bullets)
+    ? `<div class="cardbody">
+        ${sec.now ? `<p class="done"><strong class="ok">Now:</strong> ${inlineMd(sec.now)}</p>` : ''}
+        ${bullets ? `<ul>${bullets}</ul>` : ''}
+      </div>` : '';
+  if (!more) return `<div class="card">${head}</div>`;
+  return `<details class="card" data-key="${esc(item.key)}"${openCards.has(item.key) ? ' open' : ''}>
+    <summary>${head}</summary>
+    ${more}
+  </details>`;
 }
 
 function renderDashboard() {
@@ -300,9 +311,20 @@ function renderDashboard() {
     </div>` : '<p class="empty">Nothing open. Search the archive above.</p>'}
     ${buckets.map(b => `<section>
       <h2>${esc(b.title)} <span class="count">— ${b.items.length} item${b.items.length === 1 ? '' : 's'}</span></h2>
-      <div class="cards">${b.items.map(i => dashboardCard(i, b.seg)).join('')}</div>
+      <div class="cards">${b.items.map(i => dashboardCard(i)).join('')}</div>
     </section>`).join('')}
   `;
+
+  // Remember expansion across re-renders (window-focus refresh re-paints).
+  for (const det of document.querySelectorAll('details.card')) {
+    det.addEventListener('toggle', () => {
+      if (det.open) openCards.add(det.dataset.key); else openCards.delete(det.dataset.key);
+    });
+  }
+  // Links inside the summary navigate without toggling the disclosure.
+  for (const a of document.querySelectorAll('.card summary a')) {
+    a.addEventListener('click', e => e.stopPropagation());
+  }
 }
 
 /* ---------------------------------------------------------------- archive */

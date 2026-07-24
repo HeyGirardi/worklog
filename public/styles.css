@@ -227,6 +227,41 @@ section h2 .count { color: var(--text-muted); font-weight: 400; }
   transition: border-color .15s ease;
 }
 .card:hover { border-color: var(--grid); }
+/* expand/collapse: summary is the standardized head, cardbody the disclosure */
+details.card summary {
+  flex: 1;
+  display: flex; flex-direction: column; gap: 10px;
+  cursor: pointer;
+  list-style: none;
+  position: relative;
+  border-radius: 8px;
+}
+details.card summary::-webkit-details-marker { display: none; }
+details.card summary::after {
+  content: '\25B8';
+  position: absolute; right: 0; top: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  transition: transform .2s ease;
+}
+details.card[open] summary::after { transform: rotate(90deg); }
+details.card summary:hover::after { color: var(--text-primary); }
+.card h3 {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: calc(1.4em * 2);   /* reserve 2 lines so all cards align */
+}
+.card .next { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+details.card[open] .next { white-space: normal; }
+.card .next.nonext { color: var(--text-muted); font-style: italic; }
+.cardbody {
+  border-top: 1px solid var(--grid);
+  padding-top: 10px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  details.card[open] .cardbody { animation: rise .2s ease-out; }
+}
 .card .chips { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
 .chip {
   display: inline-flex; align-items: center; gap: 6px;
