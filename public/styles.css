@@ -456,32 +456,53 @@ details.session {
   margin: 10px 0;
 }
 details.session summary {
-  display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap;
-  padding: 10px 14px;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 4px 10px;
+  align-items: baseline;
+  padding: 11px 14px;
   cursor: pointer;
   list-style: none;
-  font-size: 13.5px;
   transition: background-color .15s ease;
   border-radius: 8px;
 }
 details.session summary:hover { background: var(--surface-1); }
 details.session summary::-webkit-details-marker { display: none; }
-details.session summary::before { content: '\25B8'; color: var(--text-muted); }
-details.session[open] summary::before { content: '\25BE'; }
-.session .sdates { color: var(--text-muted); font-size: 12px; white-space: nowrap; font-family: var(--font-mono); }
+details.session summary::before {
+  content: '\25B8'; color: var(--text-muted); font-size: 13px;
+  grid-row: 1 / span 2;
+  transition: transform .2s ease;
+}
+details.session[open] summary::before { transform: rotate(90deg); }
 .session .stitle {
-  flex: 1 1 260px;
-  color: var(--text-primary); font-weight: 600;
+  grid-column: 2;
+  color: var(--text-primary); font-weight: 600; font-size: 14px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.session .smeta { color: var(--text-muted); font-size: 12.5px; white-space: nowrap; margin-left: auto; }
+.session .ssub {
+  grid-column: 2;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px;
+  font-size: 12px; color: var(--text-muted);
+}
+.session .sdates { font-family: var(--font-mono); font-size: 11.5px; white-space: nowrap; }
+.session .srel {
+  display: inline-flex; align-items: center; gap: 5px;
+  border: 1px solid var(--hairline); border-radius: 999px;
+  padding: 1px 9px;
+  font-size: 11px; font-weight: 600; color: var(--text-secondary);
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.session .srel.strong { color: var(--success-text); border-color: var(--status-good); }
+.session .srecap {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 600; color: var(--success-text);
+}
 .session .sbody {
   border-top: 1px solid var(--hairline);
   padding: 12px 14px;
   display: flex; flex-direction: column; gap: 10px;
   font-size: 13.5px; color: var(--text-secondary);
 }
-.session .sbody .smeta { margin-left: 0; white-space: normal; overflow-wrap: anywhere; }
 .session .resume { display: flex; gap: 10px; align-items: center; }
 .session .resume code {
   flex: 1;

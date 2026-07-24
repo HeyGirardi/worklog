@@ -86,6 +86,7 @@ function flagChips(item) {
 }
 
 const ICON_EXT = '<svg class="ico" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>';
+const ICON_DOC = '<svg class="ico" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>';
 
 // With a Jira URL the key chip is an external link (marked with the arrow);
 // otherwise it deep-links to the item detail view.
@@ -531,26 +532,31 @@ function resumeCommand(s) {
   return s.cwd ? `cd "${s.cwd}"; claude --resume ${s.id}` : `claude --resume ${s.id}`;
 }
 
+// Session row: two-line summary (prompt title, then date/size/relevance sub-
+// line) so rows scan on a consistent type scale; the strongest signal (branch
+// or worktree match) is visible collapsed. Expanded body is actions only —
+// the resume command already carries the cwd and session id.
 function sessionCard(s, key) {
   const title = s.firstPrompt || '(no prompt captured)';
-  const matchChips =
-    (s.matchedBranch ? `<span class="chip ready">${ICON_CHECK}branch ${esc(s.matchedBranch)}</span>` :
-     s.strong ? `<span class="chip ready">${ICON_CHECK}worktree for ${esc(key)}</span>` : '') +
-    (s.mentions ? `<span class="chip">${esc(key)} mentioned ${s.mentions}&times;</span>` : '');
+  const rel = s.matchedBranch ? { txt: `branch ${s.matchedBranch}`, strong: true }
+    : s.strong ? { txt: `worktree for ${key}`, strong: true }
+    : s.mentions ? { txt: `${key} mentioned ${s.mentions}×`, strong: false } : null;
   const cmd = resumeCommand(s);
   return `<details class="session">
     <summary>
-      <span class="sdates">${fmtTsRange(s.firstTs, s.lastTs)}</span>
-      <span class="stitle" title="${esc(title)}">${esc(title.slice(0, 120))}</span>
-      <span class="smeta">${s.msgs} msgs · ${fmtSize(s.sizeKB * 1024)}${s.recap ? ' · recap &#10003;' : ''}</span>
+      <span class="stitle" title="${esc(title)}">${esc(title.slice(0, 160))}</span>
+      <span class="ssub">
+        <span class="sdates">${fmtTsRange(s.firstTs, s.lastTs)}</span>
+        <span>${s.msgs} messages</span>
+        ${rel ? `<span class="srel${rel.strong ? ' strong' : ''}">${rel.strong ? ICON_CHECK : ''}${esc(rel.txt)}</span>` : ''}
+        ${s.recap ? `<span class="srecap">${ICON_DOC}recap ready</span>` : ''}
+      </span>
     </summary>
     <div class="sbody">
-      <p class="smeta">id <code>${esc(s.id)}</code> · project ${esc(s.project)}${s.cwd ? ` · cwd <code>${esc(s.cwd)}</code>` : ''}</p>
-      <div class="chips">${matchChips}</div>
       <div class="resume"><code>${esc(cmd)}</code><button class="chip" data-copy="${esc(cmd)}">Copy</button></div>
       <div class="recap" data-id="${esc(s.id)}">
         ${s.recap ? `<div class="md">${marked.parse(s.recap)}</div>`
-                  : `<button class="chip" data-recap="${esc(s.id)}">Generate recap (~30&ndash;90 s, real API call)</button>`}
+                  : `<button class="chip" data-recap="${esc(s.id)}">Generate recap (~30-90 s, real API call)</button>`}
       </div>
     </div>
   </details>`;
