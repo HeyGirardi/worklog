@@ -215,7 +215,10 @@ header.pagehead .asof { color: var(--text-secondary); font-size: 14px; margin: 0
 /* ---------------------------------------------------------------- sections & cards */
 section h2 { font-size: 16px; font-weight: 600; margin: 30px 0 12px; }
 section h2 .count { color: var(--text-muted); font-weight: 400; }
-.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.cards {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;
+  align-items: start;   /* an expanded card grows alone; neighbors keep their collapsed height */
+}
 .card {
   background: var(--surface-1);
   border: 1px solid var(--hairline);
