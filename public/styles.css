@@ -213,21 +213,38 @@ header.pagehead .asof { color: var(--text-secondary); font-size: 14px; margin: 0
 }
 .duo .pipeline { margin-bottom: 0; }
 
-/* summary charts: rings (flag proportions) + donut (stage composition) */
-.vizrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
-.viz { width: 148px; height: 148px; flex: none; }
-.vnum {
-  font-family: var(--font-mono); font-weight: 600; font-size: 24px;
-  fill: var(--text-primary); dominant-baseline: middle;
+/* summary charts: bullet grid (flags) + 100% stacked bar (stages) */
+.vizpanel { display: flex; flex-direction: column; }
+.vizpanel h2 { display: flex; align-items: baseline; gap: 10px; }
+.h2num {
+  margin-left: auto;
+  font-family: var(--font-mono); font-size: 24px; font-weight: 600;
+  color: var(--text-primary); letter-spacing: 0; text-transform: none; line-height: 1;
 }
-.vlab {
-  font-family: var(--font-sans); font-size: 8.5px; letter-spacing: .06em; text-transform: uppercase;
-  fill: var(--text-secondary);
+.bullets { flex: 1; display: flex; flex-direction: column; gap: 16px; justify-content: center; }
+.bullet {
+  display: grid; grid-template-columns: minmax(0, 8.5em) minmax(0, 1fr) 2em;
+  gap: 12px; align-items: center;
+  font-size: 13px; color: var(--text-secondary);
 }
-.vizlegend { display: flex; flex-direction: column; gap: 9px; font-size: 13.5px; color: var(--text-secondary); min-width: 0; }
-.vizlegend .lab { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.blabel {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.btrack { display: block; height: 12px; border-radius: 4px; background: var(--page); }
+.bfill { display: block; height: 100%; border-radius: 4px; min-width: 3px; }
+.bnum { font-family: var(--font-mono); font-weight: 600; color: var(--text-primary); text-align: right; }
+.stackwrap { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 14px; }
+.stack { display: flex; height: 32px; border-radius: 6px; overflow: hidden; }
+.stkseg { display: flex; align-items: center; justify-content: center; min-width: 4px; }
+.stkseg + .stkseg { margin-left: 2px; }  /* 2px surface gap between fills */
+.stknum { font-family: var(--font-mono); font-weight: 600; font-size: 12px; color: #fff; }
+.stknum.inkdark { color: #0f172a; }
+.vizlegend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--text-secondary); min-width: 0; }
+.vizlegend .lab { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .vizlegend .swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }
-.vizlegend strong { color: var(--text-primary); font-family: var(--font-mono); min-width: 1.4em; text-align: right; flex: none; }
+.vizlegend strong { color: var(--text-primary); font-family: var(--font-mono); flex: none; }
+.vizlegend .pct { color: var(--text-muted); font-size: 12px; }
 
 /* ---------------------------------------------------------------- sections & cards */
 section h2 { font-size: 16px; font-weight: 600; margin: 30px 0 12px; }

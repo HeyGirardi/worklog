@@ -278,48 +278,31 @@ function dashboardCard(item) {
   </details>`;
 }
 
-// Concentric progress rings, outer -> inner. Each ring is an independent
-// fraction of open work (the flags overlap, so they never form one pie).
-function ringsSVG(rings, center) {
-  const radii = [48, 37, 26], W = 9;
-  const arcs = rings.map((r, i) => {
-    const R = radii[i], C = 2 * Math.PI * R;
-    const len = r.frac > 0 ? Math.max(r.frac * C, 2) : 0;
-    return `
-      <circle r="${R}" cx="60" cy="60" fill="none" style="stroke:var(--page)" stroke-width="${W}"></circle>
-      <circle r="${R}" cx="60" cy="60" fill="none" style="stroke:${r.color}" stroke-width="${W}" stroke-linecap="round"
-        stroke-dasharray="${len.toFixed(2)} ${(C - len).toFixed(2)}"><title>${esc(r.label)}: ${r.count}</title></circle>`;
-  }).join('');
-  return `<svg class="viz" viewBox="0 0 120 120" role="img"
-    aria-label="${esc(`${center.value} open; ` + rings.map(r => `${r.count} ${r.label}`).join(', '))}">
-    <g transform="rotate(-90 60 60)">${arcs}</g>
-    <text x="60" y="60" text-anchor="middle" class="vnum">${center.value}</text>
-    <text x="60" y="76" text-anchor="middle" class="vlab">${esc(center.label)}</text>
-  </svg>`;
+// Bullet-bar row (ui-ux-pro-max "Performance vs Target (Compact)", AAA:
+// values always visible as text, never hover-only). Range = all open items.
+function bulletRow(r, total) {
+  const pct = total ? (r.count / total * 100).toFixed(1) : 0;
+  return `<div class="bullet">
+    <span class="blabel">${esc(r.label)}</span>
+    <span class="btrack" title="${esc(r.label)}: ${r.count} of ${total} open">
+      <span class="bfill" style="width:${pct}%;background:${r.color}${r.count ? '' : ';min-width:0'}"></span>
+    </span>
+    <strong class="bnum">${r.count}</strong>
+  </div>`;
 }
 
-// Donut of parts-of-a-whole segments with 2px surface gaps, pipeline order.
-function donutSVG(segs, center) {
-  const R = 40, C = 2 * Math.PI * R;
+// 100% stacked bar (the part-to-whole form the chart DB grades above pie:
+// counts labeled inside segments, percentages in the legend, 2px gaps).
+function stackedBar(segs) {
   const total = segs.reduce((s, x) => s + x.count, 0) || 1;
-  const visible = segs.filter(s => s.count > 0);
-  const gap = visible.length > 1 ? 2 : 0;
-  let off = 0;
-  const circles = visible.map(s => {
-    const len = s.count / total * C;
-    const dash = Math.max(len - gap, 1.5);
-    const c = `<circle r="${R}" cx="60" cy="60" fill="none" style="stroke:${s.color}" stroke-width="15"
-      stroke-dasharray="${dash.toFixed(2)} ${(C - dash).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}">
-      <title>${esc(s.label)}: ${s.count}${s.keys ? ' — ' + esc(s.keys) : ''}</title></circle>`;
-    off += len;
-    return c;
+  const fills = segs.filter(s => s.count > 0).map(s => {
+    const pct = s.count / total * 100;
+    return `<div class="stkseg" style="flex:${s.count};background:${s.color}"
+      title="${esc(s.label)}: ${s.count} (${pct.toFixed(0)}%)${s.keys ? ' — ' + esc(s.keys) : ''}">
+      ${pct >= 12 ? `<span class="stknum${s.seg <= 2 ? ' inkdark' : ''}">${s.count}</span>` : ''}
+    </div>`;
   }).join('');
-  return `<svg class="viz" viewBox="0 0 120 120" role="img"
-    aria-label="${esc(segs.map(s => `${s.count} ${s.label}`).join(', '))}">
-    <g transform="rotate(-90 60 60)">${circles}</g>
-    <text x="60" y="60" text-anchor="middle" class="vnum">${center.value}</text>
-    <text x="60" y="76" text-anchor="middle" class="vlab">${esc(center.label)}</text>
-  </svg>`;
+  return `<div class="stack" role="img" aria-label="${esc(segs.map(s => `${s.count} ${s.label}`).join(', '))}">${fills}</div>`;
 }
 
 // Two independent columns (alternating fill = same positions as the old grid)
@@ -352,25 +335,24 @@ function renderDashboard() {
 
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-  // Two SVG summary charts. Rings: the three flags are OVERLAPPING subsets of
-  // open work (a pie would falsely imply they sum), so each gets its own
-  // proportion ring. Donut: the stages ARE parts of the whole, so a stacked
-  // ring is honest; segments keep the sequential stage ramp and 2px gaps.
-  const rings = [
-    { count: ready, frac: open.length ? ready / open.length : 0, color: 'var(--status-good)', label: 'flagged ready' },
-    { count: attn, frac: open.length ? attn / open.length : 0, color: 'var(--status-warning)', label: 'need attention' },
-    { count: waiting, frac: open.length ? waiting / open.length : 0, color: 'var(--stage-4)', label: 'waiting on others' },
+  // Summary pair: bullet grid for the three flags (overlapping subsets of
+  // open work — never slices of one pie) and a 100% stacked bar for the
+  // stages (true parts of the whole), sequential ramp, pipeline order.
+  const flags = [
+    { count: ready, color: 'var(--status-good)', label: 'flagged ready' },
+    { count: attn, color: 'var(--status-warning)', label: 'need attention' },
+    { count: waiting, color: 'var(--stage-4)', label: 'waiting on others' },
   ];
   const segs = buckets.map(b => ({
     count: b.items.length,
+    seg: b.seg,
     color: `var(--stage-${b.seg})`,
     label: b.title,
     keys: b.items.map(i => i.key).join(', '),
   }));
-  const doNow = buckets.find(b => b.title === 'Do now');
-
-  const legendFor = items => `<div class="vizlegend">${items.map(s =>
-    `<span class="lab"><span class="swatch" style="background:${s.color}"></span><strong>${s.count}</strong> ${esc(s.label)}</span>`).join('')}</div>`;
+  const totalOpen = open.length || 1;
+  const stageLegend = `<div class="vizlegend">${segs.map(s =>
+    `<span class="lab"><span class="swatch" style="background:${s.color}"></span><strong>${s.count}</strong> ${esc(s.label)}<span class="pct">${(s.count / totalOpen * 100).toFixed(0)}%</span></span>`).join('')}</div>`;
 
   $('#view').innerHTML = `
     <header class="pagehead">
@@ -382,17 +364,16 @@ function renderDashboard() {
     </header>
     ${open.length ? `<div class="duo">
       <div class="pipeline vizpanel">
-        <h2>Open work</h2>
-        <div class="vizrow">
-          ${ringsSVG(rings, { value: open.length, label: 'open' })}
-          ${legendFor(rings)}
+        <h2>Open work <strong class="h2num">${open.length}</strong></h2>
+        <div class="bullets">
+          ${flags.map(f => bulletRow(f, open.length)).join('')}
         </div>
       </div>
       <div class="pipeline vizpanel">
         <h2>Where things sit</h2>
-        <div class="vizrow">
-          ${donutSVG(segs, { value: doNow ? doNow.items.length : 0, label: 'do now' })}
-          ${legendFor(segs)}
+        <div class="stackwrap">
+          ${stackedBar(segs)}
+          ${stageLegend}
         </div>
       </div>
     </div>` : '<p class="empty">Nothing open. Search the archive above.</p>'}
