@@ -602,6 +602,14 @@ function wireSessionEvents(el) {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
         box.innerHTML = `<div class="md">${marked.parse(data.recap)}</div>`;
+        // Reflect the new recap in the collapsed row immediately.
+        const det = box.closest('details.session');
+        if (det && !det.querySelector('.srecap')) {
+          const badge = document.createElement('span');
+          badge.className = 'srecap';
+          badge.innerHTML = `${ICON_DOC}recap ready`;
+          det.querySelector('.ssub')?.appendChild(badge);
+        }
       } catch (err) {
         box.innerHTML = `<p class="tagtxt">Recap failed: ${esc(err.message)}</p>` +
           `<button class="chip" data-recap="${esc(id)}">Retry</button>`;
