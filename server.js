@@ -39,6 +39,7 @@ const CONTENT_TYPES = {
   '.gif': 'image/gif',
   '.webp': 'image/webp',
   '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
   '.txt': 'text/plain; charset=utf-8',
   '.csv': 'text/plain; charset=utf-8',
   '.log': 'text/plain; charset=utf-8',

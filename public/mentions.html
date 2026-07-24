@@ -31,25 +31,26 @@
   .m-meta { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
   .m-from { font-weight: 650; }
   .m-chat { color: var(--text-muted); font-size: 12.5px; }
-  .m-time { color: var(--text-muted); font-size: 12.5px; margin-left: auto; white-space: nowrap; }
+  .m-time { color: var(--text-muted); font-size: 11px; margin-left: auto; white-space: nowrap; font-family: var(--font-mono); }
   .kind {
-    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+    font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em;
     padding: 1px 8px; border-radius: 9px; border: 1px solid;
   }
   .kind-action   { color: var(--status-warning); border-color: var(--status-warning); }
-  .kind-question { color: var(--stage-3); border-color: var(--stage-3); }
+  .kind-question { color: var(--link); border-color: var(--link); }
   .kind-fyi      { color: var(--text-muted); border-color: var(--text-muted); }
-  .m-body { font-size: 13.5px; line-height: 1.5; overflow-wrap: anywhere; }
+  .m-body { font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
   .m-body p { margin: 5px 0; }
-  .m-body a { color: var(--stage-3); }
+  .m-body a { color: var(--link); }
   .m-foot { display: flex; align-items: center; gap: 14px; margin-top: 8px; }
-  .m-foot a { color: var(--stage-3); font-size: 12.5px; text-decoration: none; }
+  .m-foot a { color: var(--link); font-size: 12.5px; text-decoration: none; }
   .m-foot a:hover { text-decoration: underline; }
   .btn {
     margin-left: auto;
     background: none; border: 1px solid var(--hairline); border-radius: 7px;
     color: var(--text-secondary); font: inherit; font-size: 12.5px; font-weight: 600;
     padding: 4px 12px; cursor: pointer;
+    transition: border-color .15s ease, color .15s ease;
   }
   .btn:hover { border-color: var(--status-good); color: var(--success-text); }
   .btn.reopen:hover { border-color: var(--status-warning); color: var(--status-warning); }
@@ -61,17 +62,7 @@
     padding: 6px 0; user-select: none;
   }
   .cover { color: var(--text-muted); font-size: 12px; margin-top: 30px; }
-  .filters { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
-  .filters .flabel { color: var(--text-muted); font-size: 12px; margin-right: 2px; }
-  .filters button.chip {
-    background: var(--surface-1); border: 1px solid var(--hairline); border-radius: 9px;
-    color: var(--text-secondary); font: inherit; font-size: 12px; font-weight: 600;
-    padding: 3px 11px; cursor: pointer;
-  }
-  .filters button.chip[aria-pressed="true"] {
-    border-color: var(--stage-3); color: var(--text-primary);
-    outline: 1px solid var(--stage-3); outline-offset: -1px;
-  }
+  /* .filters and button.chip styling comes from the shared styles.css */
 </style>
 </head>
 <body class="viz-root">
@@ -261,7 +252,7 @@ function render() {
     d.className = 'empty';
     d.innerHTML = open.length
       ? 'No open mentions of this kind.'
-      : 'No open mentions. 🎉<br>New ones appear after <code>/mentions</code> runs in Claude Code.';
+      : 'No open mentions — inbox clear.<br>New ones appear after <code>/mentions</code> runs in Claude Code.';
     list.appendChild(d);
   } else {
     let lastDay = null;

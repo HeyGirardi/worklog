@@ -74,10 +74,14 @@ function statusChip(item) {
   return `<span class="chip"><span class="dot" style="background:${meta.dot}"></span>${label}</span>`;
 }
 
+// Inline SVG chip icons (Lucide check / triangle-alert) — no emoji glyphs.
+const ICON_CHECK = '<svg class="ico" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+const ICON_WARN = '<svg class="ico" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
+
 function flagChips(item) {
   let h = '';
-  if (item.ready) h += `<span class="chip ready"><span class="ico">&#10003;</span>${esc(item.ready)}</span>`;
-  if (item.attention) h += `<span class="chip attn"><span class="ico">&#9888;</span>${esc(item.attention)}</span>`;
+  if (item.ready) h += `<span class="chip ready">${ICON_CHECK}${esc(item.ready)}</span>`;
+  if (item.attention) h += `<span class="chip attn">${ICON_WARN}${esc(item.attention)}</span>`;
   return h;
 }
 
@@ -410,8 +414,8 @@ function resumeCommand(s) {
 function sessionCard(s, key) {
   const title = s.firstPrompt || '(no prompt captured)';
   const matchChips =
-    (s.matchedBranch ? `<span class="chip ready"><span class="ico">&#10003;</span>branch ${esc(s.matchedBranch)}</span>` :
-     s.strong ? `<span class="chip ready"><span class="ico">&#10003;</span>worktree for ${esc(key)}</span>` : '') +
+    (s.matchedBranch ? `<span class="chip ready">${ICON_CHECK}branch ${esc(s.matchedBranch)}</span>` :
+     s.strong ? `<span class="chip ready">${ICON_CHECK}worktree for ${esc(key)}</span>` : '') +
     (s.mentions ? `<span class="chip">${esc(key)} mentioned ${s.mentions}&times;</span>` : '');
   const cmd = resumeCommand(s);
   return `<details class="session">
